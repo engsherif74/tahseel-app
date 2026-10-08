@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d4d4d">
+<link rel="manifest" href="/manifest.json">
+<title>تحصيل مديونية العملاء</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   CSS كامل — main + index
+   ========================================================= */
+
+/* ═══════════════ المتغيرات ═══════════════ */
+:root{
+  --bg:#f8fafc;
+  --bg-alt:#eef2f7;
+  --card:#ffffff;
+  --tx:#0f172a;
+  --mu:#64748b;
+  --bd:#e2e8f0;
+  --bd-strong:#cbd5e1;
+  --pr:#0d4d4d;
+  --pr2:#14b8a6;
+  --pr3:#0f766e;
+  --accent:#f59e0b;
+  --accent2:#d97706;
+  --soft:#ccfbf1;
+  --soft2:#d1fae5;
+  --warn:#fef3c7;
+  --danger:#dc2626;
+  --danger2:#b91c1c;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06);
+  --shadow:0 4px 16px rgba(13,77,77,.08);
+  --shadow-lg:0 12px 40px rgba(13,77,77,.15);
+  --radius:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0a1628;
+    --bg-alt:#0f1e35;
+    --card:#132441;
+    --tx:#f1f5f9;
+    --mu:#94a3b8;
+    --bd:#1e3a5f;
+    --bd-strong:#334155;
+    --soft:#134e4a;
+    --soft2:#064e3b;
+    --warn:#422006;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.3);
+    --shadow:0 4px 16px rgba(0,0,0,.4);
+    --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  }
+}
+
+/* ═══════════════ إعادة الضبط ═══════════════ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100vh}
+body{
+  font-family:'Tajawal',-apple-system,'Segoe UI',Tahoma,Roboto,sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(20,184,166,.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(245,158,11,.06) 0%, transparent 45%);
+  background-attachment:fixed;
+  color:var(--tx);
+  padding-bottom:calc(60px + env(safe-area-inset-bottom,0px));
+  font-size:15px;
+  line-height:1.5;
+}
+
+/* ═══════════════ الهيدر ═══════════════ */
+header{
+  background:linear-gradient(135deg, #0d4d4d 0%, #0f766e 50%, #14b8a6 100%);
+  color:#fff;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 16px;
+  text-align:center;
+  border-radius:0 0 24px 24px;
+  box-shadow:0 8px 32px rgba(13,77,77,.28);
+  position:relative;
+  overflow:hidden;
+}
+header::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 30% -20%, rgba(255,255,255,.25) 0%, transparent 60%);
+  pointer-events:none;
+}
+header h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.2px;position:relative}
+.hrow{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:6px;position:relative;z-index:1;flex-wrap:wrap;
+}
+.hbtn{
+  background:rgba(255,255,255,.2);color:#fff;padding:8px 11px;
+  font-size:12px;border:1px solid rgba(255,255,255,.4);
+  border-radius:10px;font-weight:700;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:background .2s ease;font-family:inherit;cursor:pointer;
+}
+.hbtn:hover{background:rgba(255,255,255,.3)}
+
+/* ═══════════════ البطاقات ═══════════════ */
+.card{
+  background:var(--card);margin:12px;padding:14px;
+  border-radius:var(--radius);border:1px solid var(--bd);
+  box-shadow:var(--shadow-sm);transition:box-shadow .25s ease;
+}
+.card:hover{box-shadow:var(--shadow)}
+.sec{
+  display:flex;justify-content:space-between;align-items:center;
+  font-weight:800;font-size:14px;margin-bottom:10px;
+  color:var(--pr);padding-bottom:8px;border-bottom:1px dashed var(--bd);
+}
+@media (prefers-color-scheme:dark){.sec{color:var(--pr2)}}
+
+/* ═══════════════ النماذج ═══════════════ */
+label{
+  display:block;font-size:12px;font-weight:700;color:var(--mu);
+  margin-bottom:6px;text-align:center;letter-spacing:.3px;
+}
+select,input[type="text"],input[type="password"],input[type="number"]{
+  width:100%;height:48px;padding:0 12px;
+  border:1.5px solid var(--bd-strong);border-radius:12px;
+  background:var(--bg-alt);color:var(--tx);font-family:inherit;
+  font-size:14.5px;font-weight:700;text-align:center;
+  transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+select{text-align-last:center}
+input:focus,select:focus{
+  outline:none;border-color:var(--pr2);background:var(--card);
+  box-shadow:0 0 0 4px rgba(20,184,166,.15);
+}
+select:disabled{opacity:.5;cursor:not-allowed}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;direction:ltr}
+.row3>div{direction:rtl}
+
+/* ═══════════════ الجداول ═══════════════ */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  background:linear-gradient(135deg,#0d4d4d,#0f766e);color:#fff;
+  padding:10px 4px;font-size:12px;font-weight:700;letter-spacing:.2px;
+}
+thead th:first-child{border-radius:0 10px 0 0}
+thead th:last-child{border-radius:10px 0 0 0}
+tbody td{
+  padding:10px 4px;border-bottom:1px solid var(--bd);text-align:center;
+  transition:background .15s ease;
+}
+tbody tr:nth-child(even) td{background:var(--bg-alt)}
+tbody tr:hover td{background:var(--soft)}
+td.nm{text-align:right;font-weight:800}
+td.v{font-weight:800;color:var(--pr);direction:ltr}
+@media (prefers-color-scheme:dark){td.v{color:var(--pr2)}}
+tr.tot td{
+  background:linear-gradient(135deg,var(--soft),var(--soft2)) !important;
+  font-weight:800;border-top:2px solid var(--pr2);
+  font-size:14px;padding:12px 4px;
+}
+
+/* ═══════════════ الحالة الفارغة ═══════════════ */
+.empty{
+  text-align:center;color:var(--mu);padding:24px 8px;
+  font-size:13px;font-weight:600;
+}
+.empty::before{content:'📭';display:block;font-size:32px;margin-bottom:8px;opacity:.5}
+
+/* ═══════════════ الأزرار ═══════════════ */
+button{
+  border:none;border-radius:12px;font-family:inherit;font-weight:800;
+  cursor:pointer;color:#fff;
+  transition:transform .12s ease, box-shadow .2s ease, opacity .2s ease;
+  position:relative;overflow:hidden;
+}
+button::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%);
+  transform:translateX(-100%);transition:transform .6s ease;
+}
+button:hover::after{transform:translateX(100%)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+[dir="rtl"] button::after{transform:translateX(100%)}
+[dir="rtl"] button:hover::after{transform:translateX(-100%)}
+
+.big{
+  width:100%;height:48px;font-size:15px;
+  background:linear-gradient(135deg,#0ea5e9,#0369a1);
+  box-shadow:0 4px 14px rgba(14,165,233,.25);
+}
+.big.ok{
+  background:linear-gradient(135deg,#14b8a6,#0f766e);
+  box-shadow:0 4px 14px rgba(20,184,166,.3);
+}
+.big.danger{
+  background:linear-gradient(135deg,var(--danger),var(--danger2));
+  box-shadow:0 4px 14px rgba(220,38,38,.25);
+}
+.big.gold{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 4px 14px rgba(245,158,11,.3);
+}
+.link{background:none;color:var(--pr);padding:6px 10px;font-size:13px;font-weight:700}
+.link::after{display:none}
+@media (prefers-color-scheme:dark){.link{color:var(--pr2)}}
+.red{background:none;color:#dc2626;padding:4px 8px;font-size:12px;font-weight:700}
+.red::after{display:none}
+.pay{
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  padding:9px 12px;font-size:12.5px;
+  box-shadow:0 2px 8px rgba(22,163,74,.25);
+}
+
+/* ═══════════════ الحقول المساعدة ═══════════════ */
+.hidden{display:none!important}
+.ok{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  border:1.5px solid var(--pr2);border-radius:12px;
+  padding:10px 14px;font-size:13px;font-weight:700;
+  margin-bottom:10px;color:var(--pr);
+}
+@media (prefers-color-scheme:dark){.ok{color:var(--pr2)}}
+.line{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:8px;padding:9px 4px;border-bottom:1px dashed var(--bd);font-size:13px;
+}
+.line b{direction:ltr;color:var(--pr)}
+@media (prefers-color-scheme:dark){.line b{color:var(--pr2)}}
+.line.sum{
+  border:none;font-size:15px;font-weight:800;
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  padding:11px 12px;border-radius:10px;margin-top:8px;
+}
+.line small{color:var(--mu);font-weight:600}
+
+/* ═══════════════ صندوق المجموع ═══════════════ */
+.sel{
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border:1.5px solid var(--accent);border-radius:14px;
+  padding:14px;text-align:center;
+  box-shadow:0 4px 14px rgba(245,158,11,.15);
+}
+@media (prefers-color-scheme:dark){
+  .sel{background:linear-gradient(135deg,#422006,#78350f);border-color:#d97706}
+}
+.sel .t{font-size:12.5px;font-weight:700;color:var(--accent2);letter-spacing:.3px}
+@media (prefers-color-scheme:dark){.sel .t{color:#fbbf24}}
+.sel .n{font-size:28px;font-weight:800;direction:ltr;color:var(--tx);margin:4px 0}
+.sel .s{font-size:12px;color:var(--mu);margin-top:2px;font-weight:600}
+.sel .btn{
+  margin-top:12px;width:100%;height:46px;font-size:15px;
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  box-shadow:0 4px 14px rgba(22,163,74,.3);
+}
+.sel .btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ═══════════════ النوافذ المنبثقة ═══════════════ */
+.modal{
+  position:fixed;inset:0;background:rgba(15,23,42,.6);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:16px;overflow-y:auto;
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modalBox{
+  background:var(--card);border-radius:20px;padding:24px 22px;
+  width:100%;max-width:400px;box-shadow:var(--shadow-lg);
+  margin:auto;animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modalBox h3{
+  margin:0 0 16px;text-align:center;color:var(--pr);
+  font-size:17px;font-weight:800;
+}
+.modalBox .field{margin-bottom:14px}
+.modalBox label{text-align:right;margin-bottom:6px}
+.modalBox .buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.modalBox .buttons button{height:46px;font-size:14px}
+.btnCancel{background:var(--bd-strong);color:var(--tx);box-shadow:none}
+.btnConfirm{background:linear-gradient(135deg,#16a34a,#15803d);box-shadow:0 4px 14px rgba(22,163,74,.3)}
+
+/* ═══════════════ شريط التقدم ═══════════════ */
+.progress{
+  background:var(--bd);height:8px;border-radius:4px;
+  overflow:hidden;margin-top:12px;
+}
+.progress .bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--pr),var(--pr2),var(--accent));
+  width:0%;transition:width .4s ease;border-radius:4px;
+}
+
+/* ═══════════════ ملف المعلومات ═══════════════ */
+.fileInfo{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  padding:12px;border-radius:12px;font-size:12.5px;
+  color:var(--pr);margin-top:12px;text-align:center;
+  font-weight:700;white-space:pre-line;
+  border:1px solid var(--pr2);line-height:1.7;
+}
+@media (prefers-color-scheme:dark){.fileInfo{color:var(--pr2)}}
+
+/* ═══════════════ الفوتر ═══════════════ */
+.devFooter{
+  text-align:center;
+  padding:32px 16px calc(28px + env(safe-area-inset-bottom,0px));
+  margin-top:20px;position:relative;
+}
+.devFooter::before{
+  content:'';display:block;width:60px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--pr2),transparent);
+  margin:0 auto 16px;border-radius:2px;
+}
+.devFooter .dev-label{
+  font-family:'Cormorant Garamond','Times New Roman',Georgia,serif;
+  font-style:italic;font-weight:300;font-size:13px;color:var(--mu);
+  letter-spacing:.5px;margin-bottom:4px;opacity:.75;
+}
+.devFooter .dev-name{
+  font-family:'Cormorant Garamond','Times New Roman',Georgia,serif;
+  font-style:italic;font-weight:300;font-size:15px;
+  color:var(--pr);letter-spacing:1.5px;opacity:.9;
+}
+@media (prefers-color-scheme:dark){.devFooter .dev-name{color:var(--pr2)}}
+
+/* ═══════════════ شاشة تسجيل الدخول ═══════════════ */
+.loginWrap{
+  min-height:calc(100vh - 40px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 14px;gap:20px;
+}
+.loginCard{
+  width:100%;max-width:440px;background:var(--card);
+  border-radius:22px;padding:28px 24px;
+  border:1px solid var(--bd);box-shadow:var(--shadow-lg);
+  position:relative;overflow:hidden;
+}
+.loginCard::before{
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:200px;height:200px;
+  background:radial-gradient(circle, rgba(20,184,166,.15), transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
+.loginCard h2{
+  text-align:center;color:var(--pr);font-size:22px;
+  margin:0 0 6px;font-weight:800;position:relative;
+}
+@media (prefers-color-scheme:dark){.loginCard h2{color:var(--pr2)}}
+.loginCard .sub{
+  text-align:center;color:var(--mu);font-size:13px;
+  margin-bottom:22px;font-weight:600;
+}
+.loginCard .field{margin-bottom:16px}
+.loginCard label{text-align:right;font-size:13px;margin-bottom:6px}
+.userList{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.userBtn{
+  padding:14px 10px;border:2px solid var(--bd-strong);border-radius:12px;
+  background:var(--bg-alt);color:var(--tx);font-weight:800;
+  font-size:14px;cursor:pointer;transition:all .2s ease;font-family:inherit;
+}
+.userBtn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.userBtn.on{
+  border-color:var(--pr2);
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  color:var(--pr);box-shadow:0 4px 14px rgba(20,184,166,.25);
+}
+.userBtn.admin{
+  border-color:var(--accent);
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  color:#92400e;grid-column:span 2;
+}
+.userBtn.admin.on{
+  background:linear-gradient(135deg,#fde68a,#fbbf24);
+  border-color:var(--accent2);color:#78350f;
+}
+@media (prefers-color-scheme:dark){
+  .userBtn.on{color:var(--pr2)}
+  .userBtn.admin{background:linear-gradient(135deg,#422006,#78350f);color:#fbbf24}
+}
+.err{
+  background:linear-gradient(135deg,#fee2e2,#fecaca);
+  color:#991b1b;padding:10px 14px;border-radius:10px;
+  font-size:13px;font-weight:700;margin-bottom:12px;
+  text-align:center;border:1px solid #f87171;
+}
+
+/* ═══════════════ Checkbox ═══════════════ */
+.chk{
+  width:22px;height:22px;accent-color:var(--pr2);
+  cursor:pointer;margin:0;border-radius:6px;
+}
+td.ck{width:38px}
+
+/* ═══════════════ حقول الإصدار ═══════════════ */
+.iss{
+  width:100px;height:38px;padding:0 8px;
+  border:1.5px solid var(--bd-strong);border-radius:9px;
+  background:var(--bg-alt);color:var(--tx);
+  font-family:inherit;font-size:13.5px;font-weight:800;
+  text-align:center;direction:ltr;transition:all .2s ease;
+}
+.iss:focus{
+  outline:none;border-color:var(--accent);background:var(--card);
+  box-shadow:0 0 0 4px rgba(245,158,11,.15);
+}
+.neg{color:#dc2626!important}
+.pos{color:#16a34a!important}
+
+/* ═══════════════ صفوف قابلة للنقر ═══════════════ */
+.rowbtn{cursor:pointer;user-select:none;transition:background .15s ease}
+.rowbtn:hover{background:var(--soft)!important}
+.arrow{
+  display:inline-block;transition:transform .25s ease;
+  margin-inline-end:8px;font-size:10px;color:var(--pr2);
+}
+.arrow.open{transform:rotate(90deg)}
+.subrow{background:var(--bg-alt)!important}
+.subrow td{font-size:12.5px;padding:8px 4px}
+
+/* ═══════════════ بطاقات الأيام ═══════════════ */
+.dayBlock{
+  margin-bottom:12px;border:1px solid var(--bd);border-radius:14px;
+  overflow:hidden;background:var(--card);box-shadow:var(--shadow-sm);
+}
+.dayHead{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;padding:12px 14px;
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  font-weight:800;font-size:14px;color:var(--pr);
+}
+@media (prefers-color-scheme:dark){.dayHead{color:var(--pr2)}}
+.dayHead b{direction:ltr;color:var(--pr2);font-size:15px}
+.dayHead .cnt{font-size:12px;color:var(--mu);font-weight:700}
+.dayBody{padding:4px 12px 10px}
+
+/* ═══════════════ الأكورديون ═══════════════ */
+.acc{
+  width:100%;height:52px;margin-top:10px;
+  background:linear-gradient(135deg,var(--pr),var(--pr3));
+  font-size:15px;display:flex;justify-content:space-between;
+  align-items:center;padding:0 18px;border-radius:14px;
+  box-shadow:0 4px 14px rgba(13,77,77,.2);
+}
+.acc span:last-child{transition:transform .3s ease;font-size:12px}
+.acc.open span:last-child{transform:rotate(180deg)}
+
+.mini{
+  background:var(--soft);color:var(--pr);padding:8px 12px;
+  font-size:12px;margin:6px 0 0 6px;border-radius:9px;
+  font-weight:700;border:1px solid var(--pr2);
+}
+.mini:hover{background:var(--soft2)}
+
+.note{
+  margin:12px;background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border:1.5px solid var(--accent);border-radius:14px;
+  padding:12px 14px;font-size:13px;font-weight:700;
+  display:flex;gap:8px;justify-content:space-between;
+  align-items:center;color:#92400e;
+  box-shadow:0 4px 14px rgba(245,158,11,.15);
+}
+
+/* ═══════════════ الأزرار الديناميكية ═══════════════ */
+#dynamicBtnsBar{
+  display:flex;gap:8px;padding:10px 12px;
+  overflow-x:auto;flex-wrap:nowrap;
+  background:var(--card);border-bottom:1px solid var(--bd);
+  box-shadow:var(--shadow-sm);position:sticky;top:0;z-index:50;
+  scrollbar-width:thin;
+}
+#dynamicBtnsBar::-webkit-scrollbar{height:4px}
+#dynamicBtnsBar::-webkit-scrollbar-thumb{background:var(--pr2);border-radius:4px}
+.dynBtn{
+  background:linear-gradient(135deg,var(--pr),var(--pr3));
+  color:#fff;padding:10px 16px;border-radius:12px;
+  font-size:13px;font-weight:800;white-space:nowrap;
+  flex-shrink:0;box-shadow:0 4px 14px rgba(13,77,77,.2);
+  font-family:inherit;cursor:pointer;border:none;
+}
+
+/* ═══════════════ iframe للصفحات الديناميكية ═══════════════ */
+#dynIframeView{
+  position:fixed;inset:0;background:#f1f5f9;
+  z-index:9999;display:flex;flex-direction:column;overflow:hidden;
+}
+#dynIframeView .topBar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 16px;
+  background:linear-gradient(135deg,#0f766e,#14b8a6);
+  color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.2);flex-shrink:0;
+}
+#dynIframeView .topBar .title{font-weight:800;font-size:15px}
+#dynIframeView .topBar .closeBtn{
+  background:rgba(255,255,255,.25);color:#fff;
+  padding:8px 16px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.4);
+  font-weight:700;cursor:pointer;font-family:inherit;font-size:14px;
+}
+#dynIframeView iframe{
+  width:100%;flex:1;border:none;display:block;background:#fff;
+}
+
+/* ═══════════════ الواجهة الورقية ═══════════════ */
+.paperPage{
+  background:var(--card);margin:12px;padding:16px;
+  border-radius:12px;border:1px solid var(--bd);
+  box-shadow:var(--shadow-sm);
+}
+.paperHeader{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:12px;padding-bottom:10px;
+  border-bottom:2px solid var(--pr2);
+}
+.paperHeader .pageNum{
+  font-weight:800;color:var(--pr);font-size:15px;
+}
+.paperHeader .summaryTop{
+  display:flex;gap:10px;font-size:12px;
+  font-weight:700;color:var(--mu);
+}
+.paperHeader .summaryTop b{
+  color:var(--pr);direction:ltr;display:inline-block;
+  margin-inline-start:4px;
+}
+.paperTable{
+  width:100%;border-collapse:collapse;font-size:13px;
+}
+.paperTable thead th{
+  background:linear-gradient(135deg,#0d4d4d,#0f766e);
+  color:#fff;padding:8px 4px;font-size:11.5px;font-weight:700;
+}
+.paperTable thead th:first-child{border-radius:0 8px 0 0}
+.paperTable thead th:last-child{border-radius:8px 0 0 0}
+.paperTable tbody td{
+  padding:9px 4px;border-bottom:1px solid var(--bd);text-align:center;
+}
+.paperTable tbody tr:nth-child(even) td{background:var(--bg-alt)}
+.paperTable tbody tr:hover td{background:var(--soft)}
+.paperTable td.nm{text-align:right;font-weight:800;padding-inline-end:10px}
+.paperTable td.apt,
+.paperTable td.bld,
+.paperTable td.blk,
+.paperTable td.sec{
+  color:var(--mu);font-weight:700;font-size:12px;
+}
+.paperTable td.cnt{color:var(--pr2);font-weight:800;font-size:13px}
+.paperTable td.val{
+  color:var(--pr);font-weight:800;direction:ltr;font-size:13px;
+}
+.paperSummary{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;margin-top:14px;padding:12px;
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  border-radius:12px;border:1.5px solid var(--pr2);
+}
+.paperSummary .item{text-align:center}
+.paperSummary .item .lbl{
+  font-size:11px;color:var(--mu);font-weight:700;margin-bottom:4px;
+}
+.paperSummary .item .num{
+  font-size:16px;color:var(--pr);font-weight:800;direction:ltr;
+}
+.paperNav{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;margin:12px;padding:12px;
+  background:var(--card);border-radius:14px;
+  border:1px solid var(--bd);box-shadow:var(--shadow-sm);
+}
+.paperNav .navBtn{
+  background:linear-gradient(135deg,var(--pr),var(--pr3));
+  padding:10px 18px;border-radius:10px;color:#fff;
+  font-size:13px;font-weight:800;border:none;
+  cursor:pointer;font-family:inherit;
+}
+.paperNav .navBtn:disabled{opacity:.4;cursor:not-allowed}
+.paperNav .pageIndicator{
+  font-weight:800;color:var(--pr);font-size:14px;
+}
+
+/* ═══════════════ نتائج البحث ═══════════════ */
+#searchResults .resultItem{
+  padding:12px 14px;background:var(--bg-alt);border-radius:12px;
+  margin-bottom:8px;border:1px solid var(--bd);
+  cursor:pointer;transition:all .2s ease;
+}
+#searchResults .resultItem:hover{
+  background:var(--soft);border-color:var(--pr2);
+}
+#searchResults .resultItem .nm{
+  font-weight:800;font-size:15px;color:var(--tx);margin-bottom:4px;
+}
+#searchResults .resultItem .loc{
+  font-size:12px;color:var(--mu);font-weight:600;
+}
+#searchResults .resultItem .loc b{
+  color:var(--pr2);direction:ltr;display:inline-block;
+  margin-inline-start:4px;
+}
+
+/* ═══════════════ تسديدات خارج النطاق ═══════════════ */
+.outsideSummary{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:8px;margin-bottom:12px;
+}
+.outsideSummary .item{
+  background:linear-gradient(135deg,var(--warn),#fde68a);
+  border:1.5px solid var(--accent);border-radius:12px;
+  padding:10px;text-align:center;
+}
+.outsideSummary .item .lbl{
+  font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:4px;
+}
+.outsideSummary .item .num{
+  font-size:18px;color:var(--accent2);font-weight:800;direction:ltr;
+}
+
+/* ═══════════════ الموبايل ═══════════════ */
+@media (max-width:520px){
+  .paperTable{font-size:11.5px}
+  .paperTable thead th{padding:6px 2px;font-size:10.5px}
+  .paperTable tbody td{padding:8px 2px}
+  .paperTable td.nm{font-size:12px}
+  .paperSummary{grid-template-columns:repeat(2,1fr)}
+  .outsideSummary{grid-template-columns:1fr 1fr}
+  .outsideSummary .item:last-child{grid-column:span 2}
+}
+
+/* ═══════════════ تحذير ═══════════════ */
+.warnBox{
+  background:linear-gradient(135deg,#fee2e2,#fecaca);
+  border:1.5px solid var(--danger);border-radius:14px;
+  padding:14px;margin:12px;text-align:center;color:#991b1b;
+  font-weight:700;font-size:13px;line-height:1.8;
+}
+.warnBox b{display:block;font-size:15px;margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     شاشة تسجيل الدخول
+     ========================================================= -->
+<div id="loginView">
+  <div class="loginWrap">
+    <div class="loginCard">
+      <h2>🔐 تسجيل الدخول</h2>
+      <div class="sub">اختر المستخدم وأدخل كلمة المرور</div>
+      <div id="loginErr" class="err hidden"></div>
+      <label>المستخدم</label>
+      <div class="userList" id="userList"></div>
+      <div class="field">
+        <label for="pw">كلمة المرور</label>
+        <input type="password" id="pw" autocomplete="off" placeholder="••••••••">
+      </div>
+      <button class="big ok" id="loginBtn" style="height:52px;font-size:16px">دخول</button>
+    </div>
+    <div class="devFooter" style="max-width:440px;width:100%;margin-top:0">
+      <div class="dev-label">Developed by</div>
+      <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     واجهة العضو الرئيسية
+     ========================================================= -->
+<div id="memberView" class="hidden">
+
+  <header>
+    <div class="hrow">
+      <h1 id="ttl">تحصيل مديونية العملاء</h1>
+      <button class="hbtn" id="paperBtn">📄 عرض كصفحات</button>
+      <button class="hbtn" id="searchBtn">🔍 بحث</button>
+      <button class="hbtn" id="detBtn">📊 تفاصيل</button>
+      <button class="hbtn hidden" id="backBtn">رجوع</button>
+      <button class="hbtn" id="logoutBtn" style="background:rgba(220,38,38,.4);border-color:rgba(220,38,38,.7)">خروج</button>
+    </div>
+  </header>
+
+  <!-- شريط الأزرار الديناميكية -->
+  <div id="dynamicBtnsBar" class="hidden"></div>
+
+  <!-- ═══════════ v1: الواجهة الرئيسية ═══════════ -->
+  <div id="v1">
+
+    <div id="note" class="note hidden">
+      <span id="noteT"></span>
+      <button class="red" id="noteX">إغلاق</button>
+    </div>
+
+    <!-- اختيار القطاع/البلوك/العمارة -->
+    <div class="card">
+      <div class="row3">
+        <div>
+          <label for="sec">القطاع</label>
+          <select id="sec"><option value="">اختر</option></select>
+        </div>
+        <div>
+          <label for="blk">البلوك</label>
+          <select id="blk" disabled><option value="">اختر</option></select>
+        </div>
+        <div>
+          <label for="bld">العمارة</label>
+          <select id="bld" disabled><option value="">اختر</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div id="msg" class="ok hidden" style="margin:12px;white-space:pre-line"></div>
+
+    <!-- جدول الشقق -->
+    <div class="card hidden" id="res">
+      <div class="sec">
+        <span>الشقق المتبقية</span>
+        <button class="link" id="allBtn">تحديد الكل</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="ck"></th>
+            <th style="width:12%">الشقة</th>
+            <th>اسم العميل</th>
+            <th style="width:11%">العدد</th>
+            <th style="width:17%">القيمة</th>
+            <th style="width:19%">سداد</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot>
+          <tr class="tot">
+            <td></td>
+            <td colspan="2">المتبقي في العمارة</td>
+            <td id="tc">0</td>
+            <td id="tv" style="direction:ltr">0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="sel" style="margin-top:12px">
+        <div class="t">مجموع الشقق المختارة</div>
+        <div class="n" id="sv">0</div>
+        <div class="s" id="ss">لم يتم اختيار شقق</div>
+        <button class="btn" id="paySelBtn" disabled>تأكيد سداد الشقق المختارة</button>
+      </div>
+    </div>
+
+    <!-- المحصّل من العمارة -->
+    <div class="card hidden" id="coll">
+      <div class="sec"><span>المحصّل من هذه العمارة</span></div>
+      <div id="collRows"></div>
+    </div>
+
+    <!-- رفع ملف البيانات المشفَّر -->
+    <div class="card">
+      <div class="sec"><span>📤 رفع ملف البيانات المشفَّر</span></div>
+      <p style="font-size:12.5px;color:var(--mu);text-align:center;margin:0 0 12px;line-height:1.7">
+        ارفع ملفاً أو أكثر من الملفات المشفَّرة التي أرسلها لك الأدمن
+        (<code>.enc.json</code>)
+      </p>
+      <input type="file" id="encFile"
+             accept=".json,application/json" multiple
+             style="padding:12px;height:auto;text-align:center">
+      <button class="big ok" id="decBtn" style="margin-top:12px">
+        🔓 فك التشفير وتحميل البيانات
+      </button>
+      <div id="decStatus" class="fileInfo hidden"></div>
+    </div>
+
+    <!-- الفوتر -->
+    <div class="devFooter">
+      <div class="dev-label">Developed by</div>
+      <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ v2: صفحة التفاصيل ═══════════ -->
+  <div id="v2" class="hidden">
+    <div style="margin:0 12px">
+
+      <button class="acc" data-a="issues">
+        <span>إجمالي المديونية حسب القطاع</span>
+        <span>▾</span>
+      </button>
+      <div class="card hidden" id="a-issues" style="margin:8px 0 0">
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:12%">قطاع</th>
+                <th>إجمالي المديونية</th>
+                <th style="width:18%">الإصدار</th>
+                <th>إجمالي المحصّل</th>
+                <th>المتبقي من الإصدار</th>
+                <th>المتبقي من المديونية</th>
+              </tr>
+            </thead>
+            <tbody id="issBody"></tbody>
+            <tfoot>
+              <tr class="tot">
+                <td>الإجمالي</td>
+                <td id="issT_tot" style="direction:ltr">0</td>
+                <td id="issT_iss" style="direction:ltr">0</td>
+                <td id="issT_col" style="direction:ltr">0</td>
+                <td id="issT_remiss" style="direction:ltr">0</td>
+                <td id="issT_remtot" style="direction:ltr">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <button class="acc" data-a="blocks">
+        <span>المتبقي في القطاعات والبلوكات والعمارات</span>
+        <span>▾</span>
+      </button>
+      <div class="card hidden" id="a-blocks" style="margin:8px 0 0">
+        <label for="secSel">اختر القطاع</label>
+        <select id="secSel" style="margin-bottom:12px">
+          <option value="">اختر</option>
+        </select>
+        <div id="secSummary" class="line sum hidden" style="margin-bottom:10px"></div>
+        <div id="blocksBody"></div>
+      </div>
+
+      <button class="acc" data-a="days">
+        <span>سجل التحصيلات اليومية</span>
+        <span>▾</span>
+      </button>
+      <div class="card hidden" id="a-days" style="margin:8px 0 0">
+        <div id="days"></div>
+      </div>
+
+      <button class="acc" data-a="outside">
+        <span>تسديدات خارج النطاق</span>
+        <span>▾</span>
+      </button>
+      <div class="card hidden" id="a-outside" style="margin:8px 0 0">
+        <div id="outsideBody"></div>
+      </div>
+
+      <button class="acc" data-a="archive">
+        <span>أرشيف الشهور</span>
+        <span>▾</span>
+      </button>
+      <div class="card hidden" id="a-archive" style="margin:8px 0 0">
+        <div id="archiveBody"></div>
+      </div>
+
+    </div>
+
+    <div class="devFooter">
+      <div class="dev-label">Developed by</div>
+      <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ v3: صفحة البحث ═══════════ -->
+  <div id="v3" class="hidden">
+    <div class="card">
+      <div class="sec"><span>🔍 البحث بالاسم</span></div>
+      <input type="text" id="searchInput"
+             placeholder="اكتب اسم العميل..."
+             style="text-align:right;padding:0 14px;margin-bottom:12px">
+      <button class="big" id="doSearchBtn">🔍 ابحث</button>
+      <div id="searchResults" style="margin-top:16px"></div>
+    </div>
+
+    <div class="devFooter">
+      <div class="dev-label">Developed by</div>
+      <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ v4: الواجهة الورقية ═══════════ -->
+  <div id="v4" class="hidden">
+    <div class="card">
+      <div class="sec">
+        <span>📄 عرض كصفحات ورقية</span>
+        <span id="paperInfo" style="font-size:12px;color:var(--mu)"></span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <label for="paperSecSel">القطاع</label>
+          <select id="paperSecSel"><option value="">اختر</option></select>
+        </div>
+        <div>
+          <label for="paperPerPage">عدد في الصفحة</label>
+          <select id="paperPerPage">
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="paperView"></div>
+
+    <div class="devFooter">
+      <div class="dev-label">Developed by</div>
+      <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========================================================
+     نافذة تعديل كلمة المرور
+     ========================================================= -->
+<div id="editModal" class="modal hidden">
+  <div class="modalBox">
+    <h3>✏️ تعديل كلمة المرور</h3>
+    <div class="field">
+      <label>اسم العضو</label>
+      <input type="text" id="editName" readonly>
+    </div>
+    <div class="field">
+      <label>كلمة المرور الجديدة</label>
+      <input type="text" id="editPass" autocomplete="off">
+    </div>
+    <div class="buttons">
+      <button class="btnCancel" id="editCancel">إلغاء</button>
+      <button class="btnConfirm" id="editConfirm">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     نافذة iframe للصفحات الديناميكية
+     ========================================================= -->
+<div id="dynIframeView" class="hidden">
+  <div class="topBar">
+    <span class="title" id="dynIframeTitle">📄 صفحة</span>
+    <button class="closeBtn" id="dynIframeClose">✕ إغلاق</button>
+  </div>
+  <iframe id="dynIframe" src="" loading="lazy"></iframe>
+</div>
+
+<!-- =========================================================
+     بداية JavaScript
+     ========================================================= -->
+<script>
+
+
+/* =========================================================
+   الجزء 3: JavaScript المشترك
+   ========================================================= */
+
+/* ═══════════ الثوابت ═══════════ */
+const APP_SALT = "CollectAppSalt2026Secured_v1";
+const ADMIN_DEFAULT_PASSWORD = "1711@Myapp";
+const ADMIN_RESET_PASSWORD = "1711";
+
+const DEFAULT_USERS = [
+  { name:"مايكل",       password:"michael@2026", role:"member" },
+  { name:"هيثم",        password:"haitham@2026", role:"member" },
+  { name:"موسى",        password:"mousa@2026",   role:"member" },
+  { name:"أيمن",        password:"ayman@2026",   role:"member" },
+  { name:"عبد الحفيظ",  password:"hafiz@2026",   role:"member" },
+  { name:"محمد",        password:"mohamed@2026", role:"member" }
+];
+
+/* ═══════════ الأدوات المساعدة ═══════════ */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelector(sel);
+const $$$ = sel => document.querySelectorAll(sel);
+
+const f = n => Number(n).toLocaleString('en-US');
+const p2 = n => String(n).padStart(2,'0');
+const esc = s => String(s).replace(/[&<>"]/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
+}[c]));
+
+const uniq = a => [...new Set(a)].sort((x,y)=>x-y);
+const sum  = (a,i) => a.reduce((x,d)=>x+d[i],0);
+const sumP = a => a.reduce((x,p)=>x+p.v,0);
+const key  = (s,b,m,a) => [s,b,m,a].join('-');
+
+const monthKey = (d=new Date()) => d.getFullYear()+'-'+p2(d.getMonth()+1);
+const monthLabel = k => {
+  const [y,m] = k.split('-');
+  try{
+    return new Date(+y,+m-1,1).toLocaleDateString('ar-EG-u-nu-latn',
+      {month:'long',year:'numeric'});
+  }catch(e){return k;}
+};
+const dayKey = t => {
+  const d = new Date(t);
+  return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+};
+const dayLabel = t => {
+  const d = new Date(t);
+  let w = '';
+  try{ w = d.toLocaleDateString('ar-EG',{weekday:'long'}); }catch(e){}
+  return w + ' ' + d.toLocaleDateString('en-GB');
+};
+
+/* ═══════════ localStorage ═══════════ */
+const ls = (k,d) => {
+  try{
+    const v = JSON.parse(localStorage.getItem(k));
+    return v == null ? d : v;
+  }catch(e){ return d; }
+};
+const lsSet = (k,v) => {
+  try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){}
+};
+const lsRemove = k => {
+  try{ localStorage.removeItem(k); }catch(e){}
+};
+
+/* ═══════════ IndexedDB ═══════════ */
+let _db = null;
+const openDb = () => new Promise((res,rej)=>{
+  const r = indexedDB.open('collect_db',1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+const kvGet = async k => {
+  _db = _db || await openDb();
+  return new Promise((res,rej)=>{
+    const q = _db.transaction('kv').objectStore('kv').get(k);
+    q.onsuccess = () => res(q.result);
+    q.onerror = () => rej(q.error);
+  });
+};
+const kvSet = async (k,v) => {
+  _db = _db || await openDb();
+  return new Promise((res,rej)=>{
+    const t = _db.transaction('kv','readwrite');
+    t.objectStore('kv').put(v,k);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+/* ═══════════ التشفير AES-256 ═══════════ */
+function deriveKey(password, salt){
+  return CryptoJS.PBKDF2(password, salt, {
+    keySize: 256/32,
+    iterations: 10000
+  }).toString();
+}
+
+function encryptData(obj, password){
+  const key = deriveKey(password, APP_SALT);
+  const json = JSON.stringify(obj);
+  const enc = CryptoJS.AES.encrypt(json, key).toString();
+  return {
+    v: 1,
+    salt: APP_SALT,
+    data: enc,
+    meta: {
+      count: obj.data ? obj.data.length : 0,
+      owner: obj.owner || "",
+      type: obj.type || "data",
+      ts: Date.now()
+    }
+  };
+}
+
+function decryptData(encObj, password){
+  try{
+    const key = deriveKey(password, encObj.salt || APP_SALT);
+    const dec = CryptoJS.AES.decrypt(encObj.data, key)
+                 .toString(CryptoJS.enc.Utf8);
+    if(!dec) return null;
+    return JSON.parse(dec);
+  }catch(e){ return null; }
+}
+
+/* ═══════════ تحويل الأرقام العربية ═══════════ */
+const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+const toEnDigits = s => String(s).replace(/[٠-٩]/g, d => AR_DIGITS.indexOf(d));
+const toNum = v => {
+  if(v == null || v === '') return 0;
+  const str = toEnDigits(v).replace(/[^\d.-]/g,'');
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+};
+
+/* ═══════════ إدارة المستخدمين ═══════════ */
+let USERS = ls('collect_users', null);
+if(!USERS || !Array.isArray(USERS) || !USERS.length){
+  USERS = DEFAULT_USERS.slice();
+  lsSet('collect_users', USERS);
+}
+let ADMIN_PW = ls('collect_admin_pw', ADMIN_DEFAULT_PASSWORD);
+if(!ADMIN_PW) ADMIN_PW = ADMIN_DEFAULT_PASSWORD;
+
+const saveUsers = () => lsSet('collect_users', USERS);
+const saveAdminPw = () => lsSet('collect_admin_pw', ADMIN_PW);
+const sortUsers = () => {
+  USERS.sort((a,b) => a.name.localeCompare(b.name,'ar'));
+  saveUsers();
+};
+
+/* ═══════════ الجلسة ═══════════ */
+let currentUser = null;
+let scope = [];
+
+function setSession(user){
+  currentUser = user;
+  sessionStorage.setItem('collect_session', JSON.stringify(user));
+}
+function getSession(){
+  try{
+    const s = sessionStorage.getItem('collect_session');
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
+function clearSession(){
+  currentUser = null;
+  sessionStorage.removeItem('collect_session');
+  sessionStorage.removeItem('collect_member_pw');
+  sessionStorage.removeItem('collect_scope');
+}
+
+function saveScopeToSession(scopes){
+  scope = Array.isArray(scopes) ? scopes : [];
+  try{
+    sessionStorage.setItem('collect_scope', JSON.stringify(scope));
+  }catch(e){}
+}
+function loadScopeFromSession(){
+  try{
+    const s = sessionStorage.getItem('collect_scope');
+    return s ? JSON.parse(s) : [];
+  }catch(e){ return []; }
+}
+
+/* ═══════════ النطاق ═══════════ */
+function isInScope(s,b,m,a){
+  if(!scope.length) return true;
+  return scope.some(sc => {
+    const cmpFrom = comparePos(s,b,m,a, sc.from.s, sc.from.b, sc.from.m, sc.from.a);
+    const cmpTo   = comparePos(s,b,m,a, sc.to.s,   sc.to.b,   sc.to.m,   sc.to.a);
+    return cmpFrom >= 0 && cmpTo <= 0;
+  });
+}
+function comparePos(s1,b1,m1,a1, s2,b2,m2,a2){
+  if(s1 !== s2) return s1 - s2;
+  if(b1 !== b2) return b1 - b2;
+  if(m1 !== m2) return m1 - m2;
+  return a1 - a2;
+}
+
+/* ═══════════ إدارة الأزرار الديناميكية ═══════════ */
+const DYN_BTNS_KEY = 'collect_dyn_buttons';
+
+function loadDynButtons(){
+  return ls(DYN_BTNS_KEY, []);
+}
+
+function renderDynButtons(container){
+  if(!container) return;
+  const btns = loadDynButtons();
+  if(!btns.length){
+    container.innerHTML = '';
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+  container.innerHTML = btns.map((b,i)=>`
+    <button class="dynBtn" data-dyn="${i}">${esc(b.name)}</button>
+  `).join('');
+
+  container.onclick = e => {
+    const b = e.target.closest('.dynBtn');
+    if(!b) return;
+    const i = +b.dataset.dyn;
+    const btn = btns[i];
+    if(btn) openIframePage(btn.file, btn.name);
+  };
+}
+
+function openIframePage(file, title){
+  const view = $('dynIframeView');
+  const frame = $('dynIframe');
+  const ttl = $('dynIframeTitle');
+  if(!view || !frame) return;
+  ttl.textContent = title || 'صفحة';
+  frame.src = '/' + file + '?t=' + Date.now();
+  view.classList.remove('hidden');
+}
+function closeIframePage(){
+  const view = $('dynIframeView');
+  if(view) view.classList.add('hidden');
+  const frame = $('dynIframe');
+  if(frame) frame.src = '';
+}
+
+/* ═══════════ تنزيل JSON ═══════════ */
+function downloadJson(obj, filename){
+  const blob = new Blob(
+    [JSON.stringify(obj, null, 2)],
+    {type:'application/json'}
+  );
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 500);
+}
+
+/* ═══════════ حالة البيانات ═══════════ */
+let DATA = [];
+let paid = ls('collect_v1', []);
+let arcIdx = ls('collect_arcidx', []);
+let issues = ls('collect_issues', {});
+let outsidePaid = ls('collect_outside', []);
+let cur = [];
+
+if(!Array.isArray(paid)) paid = [];
+if(!Array.isArray(arcIdx)) arcIdx = [];
+if(!Array.isArray(outsidePaid)) outsidePaid = [];
+if(typeof issues !== 'object' || issues === null) issues = {};
+
+const savePaid        = () => lsSet('collect_v1', paid);
+const saveIssues      = () => lsSet('collect_issues', issues);
+const saveOutsidePaid = () => lsSet('collect_outside', outsidePaid);
+const paidSet         = () => new Set(paid.map(p => key(p.s,p.b,p.m,p.a)));
+
+async function saveData(){
+  if(!currentUser) return;
+  try{
+    await kvSet('data_' + currentUser.name, DATA);
+  }catch(e){}
+}
+async function loadData(){
+  if(!currentUser) return;
+  try{
+    const d = await kvGet('data_' + currentUser.name);
+    DATA = Array.isArray(d) ? d : [];
+  }catch(e){
+    DATA = [];
+  }
+  scope = loadScopeFromSession();
+}
+
+/* ═══════════ دوال التاريخ ═══════════ */
+function showNote(msg){
+  const note = $('note');
+  const noteT = $('noteT');
+  if(!note || !noteT) return;
+  noteT.textContent = msg;
+  note.classList.remove('hidden');
+}
+
+/* ═══════════ الأرشفة التلقائية ═══════════ */
+async function rollover(){
+  const now = monthKey();
+  const cm = localStorage.getItem('collect_month');
+  if(!cm){
+    localStorage.setItem('collect_month', now);
+    return;
+  }
+  if(cm === now) return;
+
+  const entry = {
+    m: cm,
+    ts: Date.now(),
+    raw: DATA,
+    paid: paid.slice()
+  };
+
+  let k = 'arc:' + currentUser.name + ':' + cm;
+  try{
+    if(await kvGet(k)) k += '-' + Date.now();
+    await kvSet(k, entry);
+  }catch(e){ return; }
+
+  arcIdx.unshift({
+    k,
+    m: cm,
+    total: sumP(paid),
+    n: paid.length,
+    rows: DATA.length
+  });
+  lsSet('collect_arcidx', arcIdx);
+
+  const ps = paidSet();
+  DATA = DATA.filter(d => !ps.has(key(d[0],d[1],d[2],d[3])));
+  paid = [];
+  savePaid();
+  await saveData();
+
+  localStorage.setItem('collect_month', now);
+  lsSet('collect_note', `تمت أرشفة شهر ${monthLabel(cm)} تلقائيًا.`);
+}
+
+/* ═══════════ تسجيل الدخول ═══════════ */
+function renderLoginUsers(){
+  sortUsers();
+  const box = $('userList');
+  if(!box) return;
+  let h = `<button type="button" class="userBtn admin" data-u="__admin__">👨‍💼 الأدمن</button>`;
+  USERS.forEach(u => {
+    h += `<button type="button" class="userBtn" data-u="${esc(u.name)}">${esc(u.name)}</button>`;
+  });
+  box.innerHTML = h;
+}
+
+let selectedUser = null;
+
+async function doLogin(){
+  const pw = $('pw').value;
+  const errBox = $('loginErr');
+  errBox.classList.add('hidden');
+
+  if(!selectedUser){
+    errBox.textContent = 'اختر المستخدم أولاً';
+    errBox.classList.remove('hidden');
+    return;
+  }
+  if(!pw){
+    errBox.textContent = 'أدخل كلمة المرور';
+    errBox.classList.remove('hidden');
+    return;
+  }
+
+  if(selectedUser === '__admin__'){
+    if(pw === ADMIN_RESET_PASSWORD){
+      ADMIN_PW = ADMIN_DEFAULT_PASSWORD;
+      saveAdminPw();
+      errBox.textContent = 'تم إعادة تعيين كلمة المرور.';
+      errBox.classList.remove('hidden');
+      $('pw').value = '';
+      return;
+    }
+    if(pw !== ADMIN_PW){
+      errBox.textContent = 'كلمة مرور الأدمن غير صحيحة';
+      errBox.classList.remove('hidden');
+      return;
+    }
+    location.href = '/admin.html';
+    return;
+  }
+
+  const u = USERS.find(x => x.name === selectedUser);
+  if(!u){
+    errBox.textContent = 'العضو غير موجود';
+    errBox.classList.remove('hidden');
+    return;
+  }
+  if(pw !== u.password){
+    errBox.textContent = 'كلمة المرور غير صحيحة';
+    errBox.classList.remove('hidden');
+    return;
+  }
+
+  currentUser = { name: u.name, role: 'member' };
+  setSession(currentUser);
+  sessionStorage.setItem('collect_member_pw', pw);
+
+  await showMember();
+}
+
+/* ═══════════ عرض واجهة العضو ═══════════ */
+async function showMember(){
+  $('loginView').classList.add('hidden');
+  $('memberView').classList.remove('hidden');
+  window.scrollTo(0,0);
+
+  await loadData();
+  renderDynButtons($('dynamicBtnsBar'));
+  bindMemberEvents();
+
+  const cm = monthKey();
+  const note = ls('collect_note', '');
+  if(note) showNote(note);
+
+  refresh();
+}
+
+function doLogout(){
+  if(!confirm('تسجيل الخروج؟')) return;
+  clearSession();
+  location.reload();
+}
+
+/* ═══════════ ربط الأحداث ═══════════ */
+function bindMemberEvents(){
+  const logoutBtn = $('logoutBtn');
+  if(logoutBtn) logoutBtn.onclick = doLogout;
+
+  const paperBtn = $('paperBtn');
+  if(paperBtn) paperBtn.onclick = openPaperView;
+
+  const searchBtn = $('searchBtn');
+  if(searchBtn) searchBtn.onclick = openSearchView;
+
+  const detBtn = $('detBtn');
+  if(detBtn) detBtn.onclick = openDetailsView;
+
+  const backBtn = $('backBtn');
+  if(backBtn) backBtn.onclick = closeSubView;
+
+  const sec = $('sec');
+  if(sec) sec.onchange = () => {
+    $('blk').value = '';
+    $('bld').value = '';
+    $('msg').classList.add('hidden');
+    refresh();
+  };
+
+  const blk = $('blk');
+  if(blk) blk.onchange = () => {
+    $('bld').value = '';
+    $('msg').classList.add('hidden');
+    refresh();
+  };
+
+  const bld = $('bld');
+  if(bld) bld.onchange = () => {
+    $('msg').classList.add('hidden');
+    refresh();
+  };
+
+  const allBtn = $('allBtn');
+  if(allBtn) allBtn.onclick = selectAll;
+
+  const paySelBtn = $('paySelBtn');
+  if(paySelBtn) paySelBtn.onclick = paySelected;
+
+  const decBtn = $('decBtn');
+  if(decBtn) decBtn.onclick = decryptUploadedFiles;
+
+  const noteX = $('noteX');
+  if(noteX) noteX.onclick = () => {
+    lsRemove('collect_note');
+    $('note').classList.add('hidden');
+  };
+
+  const dynClose = $('dynIframeClose');
+  if(dynClose) dynClose.onclick = closeIframePage;
+
+  const doSearchBtn = $('doSearchBtn');
+  if(doSearchBtn) doSearchBtn.onclick = performSearch;
+
+  const searchInput = $('searchInput');
+  if(searchInput){
+    searchInput.addEventListener('keydown', e => {
+      if(e.key === 'Enter') performSearch();
+    });
+  }
+
+  const paperSecSel = $('paperSecSel');
+  if(paperSecSel) paperSecSel.onchange = renderPaperPage;
+
+  const paperPerPage = $('paperPerPage');
+  if(paperPerPage){
+    paperPerPage.value = String(ls('collect_per_page', 15));
+    paperPerPage.onchange = () => {
+      lsSet('collect_per_page', +paperPerPage.value);
+      renderPaperPage();
+    };
+  }
+
+  const v2 = $('v2');
+  if(v2) v2.onclick = handleDetailClicks;
+}
+
+console.log('✅ الجزء 3 تم تحميله بنجاح');
+
+
+
+/* =========================================================
+   الجزء 4: منطق الواجهة الرئيسية + السداد + البحث + الورقية
+   ========================================================= */
+
+/* ═══════════ refresh: تعبئة القوائم ═══════════ */
+function setOpts(id, vals, label, sel){
+  const el = $(id);
+  if(!el) return;
+  el.innerHTML = '<option value="">اختر</option>' +
+    vals.map(v => `<option value="${v}">${label} ${p2(v)}</option>`).join('');
+  el.disabled = !vals.length;
+  el.value = vals.includes(sel) ? String(sel) : '';
+}
+
+function refresh(){
+  const ps = paidSet();
+  const rem = DATA.filter(d => !ps.has(key(d[0],d[1],d[2],d[3])));
+
+  const s = +$('sec').value;
+  const b = +$('blk').value;
+  const m = +$('bld').value;
+
+  setOpts('sec', uniq(rem.map(d => d[0])), 'قطاع', s);
+
+  const s2 = +$('sec').value;
+  setOpts('blk',
+    s2 ? uniq(rem.filter(d => d[0] === s2).map(d => d[1])) : [],
+    'بلوك', b);
+
+  const b2 = +$('blk').value;
+  setOpts('bld',
+    b2 ? uniq(rem.filter(d => d[0] === s2 && d[1] === b2).map(d => d[2])) : [],
+    'عمارة', m);
+
+  renderBuilding(rem);
+}
+
+/* ═══════════ جدول الشقق ═══════════ */
+function renderBuilding(rem){
+  const s = +$('sec').value;
+  const b = +$('blk').value;
+  const m = +$('bld').value;
+
+  if(!(s && b && m)){
+    cur = [];
+    ['res','coll'].forEach(i => $(i).classList.add('hidden'));
+    return;
+  }
+
+  cur = rem
+    .filter(d => d[0] === s && d[1] === b && d[2] === m)
+    .sort((x,y) => x[3] - y[3]);
+
+  if(!cur.length){
+    $('rows').innerHTML =
+      '<tr><td colspan="6" class="empty">لا توجد شقق متبقية</td></tr>';
+    $('tc').textContent = '0';
+    $('tv').textContent = '0';
+    $('res').classList.remove('hidden');
+    updateSelTotal();
+  } else {
+    $('rows').innerHTML = cur.map((d,i)=>`
+      <tr>
+        <td class="ck">
+          <input type="checkbox" class="chk" data-i="${i}">
+        </td>
+        <td>${p2(d[3])}</td>
+        <td class="nm">${esc(d[4])}</td>
+        <td>${d[5]}</td>
+        <td class="v">${f(d[6])}</td>
+        <td><button class="pay" data-i="${i}">سداد</button></td>
+      </tr>
+    `).join('');
+
+    $('tc').textContent = f(sum(cur, 5));
+    $('tv').textContent = f(sum(cur, 6));
+    $('res').classList.remove('hidden');
+
+    $('rows').querySelectorAll('.pay').forEach(btn => {
+      btn.onclick = e => {
+        const i = +e.target.dataset.i;
+        const d = cur[i];
+        if(d) paySingle(d);
+      };
+    });
+
+    $('rows').querySelectorAll('.chk').forEach(chk => {
+      chk.onchange = updateSelTotal;
+    });
+  }
+
+  const L = paid.filter(p => p.s === s && p.b === b && p.m === m);
+  $('coll').classList.toggle('hidden', !L.length);
+  $('collRows').innerHTML =
+    L.map(p => `
+      <div class="line">
+        <span><b style="color:var(--tx)">${esc(p.n)}</b> - شقة ${p2(p.a)}</span>
+        <b>${f(p.v)}</b>
+      </div>
+    `).join('') +
+    `<div class="line sum">
+      <span>إجمالي المحصّل من العمارة</span>
+      <b>${f(sumP(L))}</b>
+    </div>`;
+
+  updateSelTotal();
+}
+
+/* ═══════════ سداد فردي ═══════════ */
+function paySingle(d){
+  if(!confirm(`تأكيد سداد شقة ${p2(d[3])}\n${d[4]}\nالمبلغ: ${f(d[6])}`)) return;
+  paid.push({
+    s: d[0], b: d[1], m: d[2], a: d[3],
+    n: d[4], c: d[5], v: d[6],
+    t: Date.now(),
+    outside: false
+  });
+  savePaid();
+  $('msg').textContent = `تم سداد شقة ${p2(d[3])} - ${d[4]} - ${f(d[6])}`;
+  $('msg').classList.remove('hidden');
+  refresh();
+}
+
+/* ═══════════ تحديد الكل ═══════════ */
+function selectAll(){
+  const bx = [...document.querySelectorAll('#rows input.chk')];
+  const all = bx.every(x => x.checked);
+  bx.forEach(x => x.checked = !all);
+  updateSelTotal();
+}
+
+/* ═══════════ تحديث مجموع المختارة ═══════════ */
+function updateSelTotal(){
+  let v = 0, c = 0, n = 0;
+  const bx = document.querySelectorAll('#rows input.chk');
+  bx.forEach(x => {
+    if(x.checked){
+      const i = +x.dataset.i;
+      v += cur[i][6];
+      c += cur[i][5];
+      n++;
+    }
+  });
+  $('sv').textContent = f(v);
+  $('ss').textContent = n
+    ? `${n} شقة - عدد الفواتير ${c}`
+    : 'لم يتم اختيار شقق';
+  $('allBtn').textContent = (bx.length && n === bx.length)
+    ? 'إلغاء التحديد'
+    : 'تحديد الكل';
+  $('paySelBtn').disabled = !n;
+}
+
+/* ═══════════ سداد المختارة ═══════════ */
+function paySelected(){
+  const bx = [...document.querySelectorAll('#rows input.chk')].filter(x => x.checked);
+  if(!bx.length) return;
+  const items = bx.map(x => cur[+x.dataset.i]).filter(Boolean);
+  const tot = items.reduce((a,d) => a + d[6], 0);
+  if(!confirm(
+    `تأكيد سداد ${items.length} شقة بمبلغ ${f(tot)}؟\n\n` +
+    items.map(d => `شقة ${p2(d[3])} - ${d[4]}`).join('\n')
+  )) return;
+
+  const now = Date.now();
+  items.forEach(d => paid.push({
+    s: d[0], b: d[1], m: d[2], a: d[3],
+    n: d[4], c: d[5], v: d[6],
+    t: now,
+    outside: false
+  }));
+  savePaid();
+  $('msg').textContent = `تم سداد ${items.length} شقة - ${f(tot)}`;
+  $('msg').classList.remove('hidden');
+  refresh();
+}
+
+/* ═══════════ فتح الواجهة الورقية ═══════════ */
+function openPaperView(){
+  $('v1').classList.add('hidden');
+  $('v2').classList.add('hidden');
+  $('v3').classList.add('hidden');
+  $('v4').classList.remove('hidden');
+  $('backBtn').classList.remove('hidden');
+  $('ttl').textContent = '📄 عرض كصفحات ورقية';
+
+  const secs = uniq(DATA.map(d => d[0]));
+  const sel = $('paperSecSel');
+
+  if(secs.length === 1){
+    sel.innerHTML = `<option value="${secs[0]}">قطاع ${p2(secs[0])}</option>`;
+    sel.value = secs[0];
+    sel.disabled = true;
+  } else {
+    sel.disabled = false;
+    sel.innerHTML = '<option value="">اختر القطاع</option>' +
+      secs.map(s => `<option value="${s}">قطاع ${p2(s)}</option>`).join('');
+    sel.value = '';
+  }
+
+  const perPage = ls('collect_per_page', 15);
+  $('paperPerPage').value = String(perPage);
+
+  renderPaperPage();
+}
+
+/* ═══════════ رسم الصفحة الورقية ═══════════ */
+function renderPaperPage(){
+  const s = +$('paperSecSel').value;
+  const perPage = +$('paperPerPage').value || 15;
+
+  if(!s){
+    $('paperView').innerHTML =
+      '<div class="card"><div class="empty">اختر القطاع أولاً</div></div>';
+    return;
+  }
+
+  const ps = paidSet();
+  const remaining = DATA
+    .filter(d => d[0] === s && !ps.has(key(d[0],d[1],d[2],d[3])))
+    .sort((x,y) => {
+      if(x[1] !== y[1]) return x[1] - y[1];
+      if(x[2] !== y[2]) return x[2] - y[2];
+      return x[3] - y[3];
+    });
+
+  if(!remaining.length){
+    $('paperView').innerHTML =
+      `<div class="card">
+        <div class="empty">تم سداد جميع عملاء قطاع ${p2(s)} 🎉</div>
+      </div>`;
+    return;
+  }
+
+  const totalPages = Math.ceil(remaining.length / perPage);
+  const page = Math.min(
+    Math.max(1, +sessionStorage.getItem('paper_page_' + s) || 1),
+    totalPages
+  );
+  sessionStorage.setItem('paper_page_' + s, page);
+
+  const start = (page - 1) * perPage;
+  const end = Math.min(start + perPage, remaining.length);
+  const pageItems = remaining.slice(start, end);
+
+  let rows = pageItems.map((d, i) => {
+    const realIdx = start + i;
+    return `
+      <tr>
+        <td class="ck">
+          <input type="checkbox" class="paperChk" data-i="${realIdx}">
+        </td>
+        <td class="nm">${esc(d[4])}</td>
+        <td class="apt">${p2(d[3])}</td>
+        <td class="bld">${p2(d[2])}</td>
+        <td class="blk">${p2(d[1])}</td>
+        <td class="sec">${p2(d[0])}</td>
+        <td class="cnt">${d[5]}</td>
+        <td class="val">${f(d[6])}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const totalCnt = pageItems.reduce((a,d) => a + d[5], 0);
+  const totalVal = pageItems.reduce((a,d) => a + d[6], 0);
+  const secAllVal = remaining.reduce((a,d) => a + d[6], 0);
+
+  $('paperInfo').textContent =
+    `صفحة ${page} من ${totalPages} — ${remaining.length} عميل`;
+
+  $('paperView').innerHTML = `
+    <div class="paperPage">
+      <div class="paperHeader">
+        <div class="pageNum">📄 صفحة ${page} / ${totalPages}</div>
+        <div class="summaryTop">
+          <span>عدد: <b>${remaining.length}</b></span>
+          <span>قيمة: <b>${f(secAllVal)}</b></span>
+        </div>
+      </div>
+
+      <table class="paperTable">
+        <thead>
+          <tr>
+            <th style="width:34px"></th>
+            <th>الاسم</th>
+            <th style="width:50px">شقة</th>
+            <th style="width:50px">عمارة</th>
+            <th style="width:50px">بلوك</th>
+            <th style="width:50px">قطاع</th>
+            <th style="width:44px">العدد</th>
+            <th style="width:70px">القيمة</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div class="paperSummary">
+        <div class="item">
+          <div class="lbl">إجمالي الصفحة</div>
+          <div class="num">${f(totalVal)}</div>
+        </div>
+        <div class="item">
+          <div class="lbl">عدد الفواتير</div>
+          <div class="num">${f(totalCnt)}</div>
+        </div>
+        <div class="item">
+          <div class="lbl">المختار</div>
+          <div class="num" id="paperSelNum">0</div>
+        </div>
+        <div class="item">
+          <div class="lbl">عدد المختار</div>
+          <div class="num" id="paperSelCnt">0</div>
+        </div>
+      </div>
+
+      <button class="big ok" id="paperPayBtn"
+              style="margin-top:12px" disabled>
+        ✅ تأكيد سداد المختارة
+      </button>
+    </div>
+
+    <div class="paperNav">
+      <button class="navBtn" id="prevPage" ${page === 1 ? 'disabled' : ''}>
+        ⬅️ السابق
+      </button>
+      <div class="pageIndicator">صفحة ${page} / ${totalPages}</div>
+      <button class="navBtn" id="nextPage" ${page === totalPages ? 'disabled' : ''}>
+        التالي ➡️
+      </button>
+    </div>
+  `;
+
+  $('prevPage').onclick = () => {
+    if(page > 1){
+      sessionStorage.setItem('paper_page_' + s, page - 1);
+      renderPaperPage();
+      window.scrollTo(0,0);
+    }
+  };
+  $('nextPage').onclick = () => {
+    if(page < totalPages){
+      sessionStorage.setItem('paper_page_' + s, page + 1);
+      renderPaperPage();
+      window.scrollTo(0,0);
+    }
+  };
+
+  const pageRef = { items: pageItems, s: s, start: start, perPage: perPage };
+  document.querySelectorAll('.paperChk').forEach(chk => {
+    chk.onchange = () => updatePaperTotal(pageRef);
+  });
+
+  $('paperPayBtn').onclick = () => payPaperSelected(pageRef);
+}
+
+/* ═══════════ تحديث مجموع الصفحة الورقية ═══════════ */
+function updatePaperTotal(ref){
+  const bx = [...document.querySelectorAll('.paperChk')];
+  let n = 0, cnt = 0, val = 0;
+  bx.forEach(x => {
+    if(x.checked){
+      const realIdx = +x.dataset.i;
+      const localIdx = realIdx - ref.start;
+      const d = ref.items[localIdx];
+      if(d){
+        n++;
+        cnt += d[5];
+        val += d[6];
+      }
+    }
+  });
+  $('paperSelNum').textContent = f(val);
+  $('paperSelCnt').textContent = f(cnt);
+  $('paperPayBtn').disabled = !n;
+}
+
+/* ═══════════ سداد المختارة في الصفحة الورقية ═══════════ */
+function payPaperSelected(ref){
+  const bx = [...document.querySelectorAll('.paperChk')].filter(x => x.checked);
+  if(!bx.length) return;
+
+  const items = bx.map(x => {
+    const realIdx = +x.dataset.i;
+    const localIdx = realIdx - ref.start;
+    return ref.items[localIdx];
+  }).filter(Boolean);
+
+  const tot = items.reduce((a,d) => a + d[6], 0);
+  const cnt = items.reduce((a,d) => a + d[5], 0);
+
+  if(!confirm(
+    `تأكيد سداد ${items.length} شقة بمبلغ ${f(tot)}؟\n` +
+    `عدد الفواتير: ${cnt}`
+  )) return;
+
+  const now = Date.now();
+  items.forEach(d => paid.push({
+    s: d[0], b: d[1], m: d[2], a: d[3],
+    n: d[4], c: d[5], v: d[6],
+    t: now,
+    outside: false,
+    page: sessionStorage.getItem('paper_page_' + ref.s)
+  }));
+  savePaid();
+
+  lsSet('collect_last_payment', {
+    page: +sessionStorage.getItem('paper_page_' + ref.s) || 1,
+    count: items.length,
+    total: tot,
+    ts: now,
+    lastClient: items[items.length - 1][4],
+    lastApt: items[items.length - 1][3]
+  });
+
+  $('msg').textContent = `✅ تم سداد ${items.length} شقة - ${f(tot)}`;
+  $('msg').classList.remove('hidden');
+  renderPaperPage();
+}
+
+/* ═══════════ فتح صفحة البحث ═══════════ */
+function openSearchView(){
+  $('v1').classList.add('hidden');
+  $('v2').classList.add('hidden');
+  $('v4').classList.add('hidden');
+  $('v3').classList.remove('hidden');
+  $('backBtn').classList.remove('hidden');
+  $('ttl').textContent = '🔍 البحث بالاسم';
+  $('searchInput').value = '';
+  $('searchResults').innerHTML = '';
+  $('searchInput').focus();
+}
+
+/* ═══════════ البحث بالاسم ═══════════ */
+function performSearch(){
+  const q = $('searchInput').value.trim();
+  if(!q){
+    $('searchResults').innerHTML =
+      '<div class="empty">اكتب اسماً للبحث</div>';
+    return;
+  }
+
+  const qLower = q.toLowerCase();
+  const ps = paidSet();
+
+  const matches = DATA.filter(d =>
+    d[4].toLowerCase().includes(qLower) &&
+    !ps.has(key(d[0],d[1],d[2],d[3]))
+  );
+
+  if(!matches.length){
+    $('searchResults').innerHTML =
+      `<div class="empty">لا توجد نتائج للبحث: ${esc(q)}</div>`;
+    return;
+  }
+
+  const buildings = uniq(matches.map(d => `${d[0]}-${d[1]}-${d[2]}`));
+
+  if(buildings.length === 1){
+    const [s,b,m] = buildings[0].split('-').map(Number);
+    renderSearchBuilding(s,b,m);
+    return;
+  }
+
+  let h = `<div class="ok">تم العثور على ${matches.length} عميل في ${buildings.length} عمارة</div>`;
+  h += buildings.map(bid => {
+    const [s,b,m] = bid.split('-').map(Number);
+    const items = matches.filter(d => d[0]===s && d[1]===b && d[2]===m);
+    const total = items.reduce((a,d) => a+d[6], 0);
+    return `
+      <div class="resultItem" data-bid="${bid}">
+        <div class="nm">
+          عمارة ${p2(m)} — بلوك ${p2(b)} — قطاع ${p2(s)}
+        </div>
+        <div class="loc">
+          ${items.length} عميل - إجمالي: <b>${f(total)}</b>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  $('searchResults').innerHTML = h;
+
+  document.querySelectorAll('.resultItem').forEach(el => {
+    el.onclick = () => {
+      const [s,b,m] = el.dataset.bid.split('-').map(Number);
+      renderSearchBuilding(s,b,m);
+    };
+  });
+}
+
+/* ═══════════ عرض عمارة من نتائج البحث ═══════════ */
+function renderSearchBuilding(s, b, m){
+  const ps = paidSet();
+  const items = DATA
+    .filter(d => d[0]===s && d[1]===b && d[2]===m && !ps.has(key(d[0],d[1],d[2],d[3])))
+    .sort((x,y) => x[3] - y[3]);
+
+  if(!items.length){
+    $('searchResults').innerHTML =
+      '<div class="empty">تم سداد كل عملاء هذه العمارة</div>';
+    return;
+  }
+
+  const totalCnt = items.reduce((a,d) => a + d[5], 0);
+  const totalVal = items.reduce((a,d) => a + d[6], 0);
+
+  let h = `
+    <button class="link" id="backToSearch" style="margin-bottom:8px">
+      ⬅️ رجوع للبحث
+    </button>
+    <div style="background:var(--bg-alt);padding:14px;border-radius:14px;border:1.5px solid var(--pr2)">
+      <div style="font-weight:800;font-size:14px;color:var(--pr);margin-bottom:10px;text-align:center">
+        🏢 عمارة ${p2(m)} — بلوك ${p2(b)} — قطاع ${p2(s)}
+      </div>
+      <div class="ok" style="margin:8px 0">
+        إجمالي: <b>${f(totalVal)}</b> — عدد الفواتير: <b>${totalCnt}</b>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="ck"></th>
+            <th style="width:50px">شقة</th>
+            <th>الاسم</th>
+            <th style="width:50px">عدد</th>
+            <th style="width:70px">قيمة</th>
+            <th style="width:70px">سداد</th>
+          </tr>
+        </thead>
+        <tbody id="searchRows">
+          ${items.map((d,i)=>`
+            <tr>
+              <td class="ck">
+                <input type="checkbox" class="sChk" data-si="${i}">
+              </td>
+              <td>${p2(d[3])}</td>
+              <td class="nm">${esc(d[4])}</td>
+              <td>${d[5]}</td>
+              <td class="v">${f(d[6])}</td>
+              <td><button class="pay" data-si="${i}">سداد</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="sel" style="margin-top:10px">
+        <div class="t">مجموع الشقق المختارة (خارج النطاق)</div>
+        <div class="n" id="searchSelNum">0</div>
+        <div class="s" id="searchSelCnt">0 فاتورة</div>
+        <button class="btn" id="searchPayBtn" disabled>
+          ✅ تأكيد سداد المختارة (خارج النطاق)
+        </button>
+      </div>
+    </div>
+  `;
+
+  $('searchResults').innerHTML = h;
+
+  $('backToSearch').onclick = performSearch;
+
+  document.querySelectorAll('.sChk').forEach(chk => {
+    chk.onchange = () => updateSearchTotal(items);
+  });
+
+  document.querySelectorAll('.pay[data-si]').forEach(btn => {
+    btn.onclick = e => {
+      const i = +e.target.dataset.si;
+      payOutsideSingle(items[i]);
+    };
+  });
+
+  $('searchPayBtn').onclick = () => payOutsideSelected(items);
+}
+
+/* ═══════════ تحديث مجموع البحث ═══════════ */
+function updateSearchTotal(items){
+  const bx = [...document.querySelectorAll('.sChk')];
+  let n = 0, cnt = 0, val = 0;
+  bx.forEach(x => {
+    if(x.checked){
+      const i = +x.dataset.si;
+      const d = items[i];
+      if(d){
+        n++;
+        cnt += d[5];
+        val += d[6];
+      }
+    }
+  });
+  $('searchSelNum').textContent = f(val);
+  $('searchSelCnt').textContent = `${cnt} فاتورة`;
+  $('searchPayBtn').disabled = !n;
+}
+
+/* ═══════════ سداد فردي خارج النطاق ═══════════ */
+function payOutsideSingle(d){
+  if(!d) return;
+  if(!confirm(`سداد خارج النطاق\nشقة ${p2(d[3])} - ${d[4]}\nالمبلغ: ${f(d[6])}`)) return;
+
+  const rec = {
+    s: d[0], b: d[1], m: d[2], a: d[3],
+    n: d[4], c: d[5], v: d[6],
+    t: Date.now(),
+    outside: true
+  };
+  paid.push(rec);
+  outsidePaid.push(rec);
+  savePaid();
+  saveOutsidePaid();
+
+  $('msg').textContent = `✅ تم سداد ${d[4]} (خارج النطاق) — ${f(d[6])}`;
+  $('msg').classList.remove('hidden');
+  performSearch();
+}
+
+/* ═══════════ سداد المختارة خارج النطاق ═══════════ */
+function payOutsideSelected(items){
+  const bx = [...document.querySelectorAll('.sChk')].filter(x => x.checked);
+  if(!bx.length) return;
+  const sel = bx.map(x => items[+x.dataset.si]).filter(Boolean);
+  const tot = sel.reduce((a,d) => a + d[6], 0);
+  const cnt = sel.reduce((a,d) => a + d[5], 0);
+
+  if(!confirm(
+    `تأكيد سداد ${sel.length} شقة خارج النطاق\n` +
+    `الإجمالي: ${f(tot)}\nعدد الفواتير: ${cnt}`
+  )) return;
+
+  const now = Date.now();
+  sel.forEach(d => {
+    const rec = {
+      s: d[0], b: d[1], m: d[2], a: d[3],
+      n: d[4], c: d[5], v: d[6],
+      t: now,
+      outside: true
+    };
+    paid.push(rec);
+    outsidePaid.push(rec);
+  });
+  savePaid();
+  saveOutsidePaid();
+
+  $('msg').textContent = `✅ تم سداد ${sel.length} شقة خارج النطاق — ${f(tot)}`;
+  $('msg').classList.remove('hidden');
+  performSearch();
+}
+
+/* ═══════════ الرجوع من الشاشات الفرعية ═══════════ */
+function closeSubView(){
+  $('v1').classList.remove('hidden');
+  $('v2').classList.add('hidden');
+  $('v3').classList.add('hidden');
+  $('v4').classList.add('hidden');
+  $('backBtn').classList.add('hidden');
+  $('ttl').textContent = 'تحصيل مديونية العملاء';
+  refresh();
+  window.scrollTo(0,0);
+}
+
+console.log('✅ الجزء 4 تم تحميله بنجاح');
+
+
+
+
+/* =========================================================
+   الجزء 5: تفاصيل التحصيل + فك تشفير الملفات + الإقلاع
+   ========================================================= */
+
+/* ═══════════ فتح صفحة التفاصيل ═══════════ */
+function openDetailsView(){
+  $('v1').classList.add('hidden');
+  $('v3').classList.add('hidden');
+  $('v4').classList.add('hidden');
+  $('v2').classList.remove('hidden');
+  $('backBtn').classList.remove('hidden');
+  $('ttl').textContent = '📊 تفاصيل التحصيل';
+  renderDetails();
+  window.scrollTo(0,0);
+}
+
+/* ═══════════ معالج النقر داخل التفاصيل ═══════════ */
+const openAcc = new Set();
+const openSub = new Set();
+const openBlk = new Set();
+
+function handleDetailClicks(e){
+  // زر الأكورديون
+  const ac = e.target.closest('.acc');
+  if(ac){
+    const a = ac.dataset.a;
+    if(openAcc.has(a)) openAcc.delete(a);
+    else openAcc.add(a);
+    $('a-' + a).classList.toggle('hidden', !openAcc.has(a));
+    ac.classList.toggle('open', openAcc.has(a));
+    return;
+  }
+
+  // زر الفرع
+  const sb = e.target.closest('[data-sub]');
+  if(sb){
+    const id = sb.dataset.sub;
+    const box = $('s-' + id);
+    if(!box) return;
+    const hidden = box.classList.toggle('hidden');
+    if(hidden) openSub.delete(id);
+    else openSub.add(id);
+    if(!hidden && id.startsWith('m')) fillMonth(id.slice(1));
+    return;
+  }
+
+  // صف بلوك
+  const rb = e.target.closest('[data-blk]');
+  if(rb){
+    const id = rb.dataset.blk;
+    if(openBlk.has(id)) openBlk.delete(id);
+    else openBlk.add(id);
+    renderBlockSection();
+    return;
+  }
+
+  // زر تنزيل
+  const dlBtn = e.target.closest('[data-dl]');
+  if(dlBtn){
+    downloadArchive(dlBtn.dataset.k, dlBtn.dataset.dl);
+    return;
+  }
+
+  // زر تراجع
+  const undo = e.target.closest('button[data-t]');
+  if(undo){
+    undoPayment(undo.dataset.t);
+    return;
+  }
+}
+
+/* ═══════════ رسم صفحة التفاصيل ═══════════ */
+function renderDetails(){
+  renderIssues();
+  renderBlockSection();
+  renderDays();
+  renderOutside();
+  renderArchive();
+}
+
+/* ═══════════ جدول الإصدارات ═══════════ */
+function renderIssues(){
+  const secTot = {};
+  DATA.forEach(d => {
+    secTot[d[0]] = (secTot[d[0]] || 0) + d[6];
+  });
+
+  const secCol = {};
+  paid.forEach(p => {
+    secCol[p.s] = (secCol[p.s] || 0) + p.v;
+  });
+
+  const secs = uniq([
+    ...Object.keys(secTot).map(Number),
+    ...Object.keys(secCol).map(Number)
+  ]);
+
+  if(!secs.length){
+    $('issBody').innerHTML =
+      '<tr><td colspan="6" class="empty">لا توجد بيانات</td></tr>';
+    ['issT_tot','issT_iss','issT_col','issT_remiss','issT_remtot']
+      .forEach(id => { const el = $(id); if(el) el.textContent = '0'; });
+    return;
+  }
+
+  let html = '';
+  let tot = [0,0,0,0,0];
+
+  secs.forEach(s => {
+    const t = secTot[s] || 0;
+    const col = secCol[s] || 0;
+    const iss = Number(issues[s]) || 0;
+    const remIss = iss - col;
+    const remTot = t - col;
+
+    html += `
+      <tr>
+        <td class="lb">قطاع ${p2(s)}</td>
+        <td class="v">${f(t)}</td>
+        <td>
+          <input type="number" class="iss"
+                 data-sec="${s}"
+                 value="${iss}"
+                 min="0" max="${t}" step="1">
+        </td>
+        <td class="v">${f(col)}</td>
+        <td class="v ${remIss < 0 ? 'neg' : (remIss > 0 ? 'pos' : '')}">
+          ${f(remIss)}
+        </td>
+        <td class="v">${f(remTot)}</td>
+      </tr>
+    `;
+    tot[0] += t; tot[1] += iss; tot[2] += col;
+    tot[3] += remIss; tot[4] += remTot;
+  });
+
+  $('issBody').innerHTML = html;
+  $('issT_tot').textContent = f(tot[0]);
+  $('issT_iss').textContent = f(tot[1]);
+  $('issT_col').textContent = f(tot[2]);
+  $('issT_remiss').textContent = f(tot[3]);
+  $('issT_remtot').textContent = f(tot[4]);
+
+  $('issBody').querySelectorAll('.iss').forEach(inp => {
+    inp.oninput = e => {
+      const s = +inp.dataset.sec;
+      const t = Number(inp.max) || 0;
+      let v = Number(inp.value) || 0;
+      if(v < 0) v = 0;
+      if(v > t){ v = t; inp.value = t; }
+      issues[s] = v;
+      saveIssues();
+      const row = inp.closest('tr');
+      const col = Number(row.children[3].textContent.replace(/,/g,'')) || 0;
+      const remIss = v - col;
+      const remTot = t - col;
+      const c4 = row.children[4];
+      const c5 = row.children[5];
+      c4.textContent = f(remIss);
+      c4.className = 'v ' + (remIss < 0 ? 'neg' : (remIss > 0 ? 'pos' : ''));
+      c5.textContent = f(remTot);
+      refreshIssTotals();
+    };
+  });
+}
+
+function refreshIssTotals(){
+  const secTot = {};
+  DATA.forEach(d => { secTot[d[0]] = (secTot[d[0]]||0) + d[6]; });
+  const secCol = {};
+  paid.forEach(p => { secCol[p.s] = (secCol[p.s]||0) + p.v; });
+
+  const secs = uniq([
+    ...Object.keys(secTot).map(Number),
+    ...Object.keys(secCol).map(Number)
+  ]);
+
+  let t = [0,0,0,0,0];
+  secs.forEach(s => {
+    const tot = secTot[s] || 0;
+    const col = secCol[s] || 0;
+    const iss = Number(issues[s]) || 0;
+    t[0] += tot; t[1] += iss; t[2] += col;
+    t[3] += iss - col; t[4] += tot - col;
+  });
+
+  $('issT_tot').textContent = f(t[0]);
+  $('issT_iss').textContent = f(t[1]);
+  $('issT_col').textContent = f(t[2]);
+  $('issT_remiss').textContent = f(t[3]);
+  $('issT_remtot').textContent = f(t[4]);
+}
+
+/* ═══════════ البلوكات والعمارات ═══════════ */
+function renderBlockSection(){
+  const s = +$('secSel').value;
+  if(!s){
+    $('secSummary').classList.add('hidden');
+    $('blocksBody').innerHTML =
+      '<div class="empty">اختر قطاعاً لعرض البلوكات</div>';
+    return;
+  }
+
+  const secRows = DATA.filter(d => d[0] === s);
+  const tot = sum(secRows, 6);
+  const col = paid.filter(p => p.s === s).reduce((a,p) => a + p.v, 0);
+  const iss = Number(issues[s]) || 0;
+
+  $('secSummary').classList.remove('hidden');
+  $('secSummary').innerHTML = `
+    <span>قطاع ${p2(s)} — مديونية: <b>${f(tot)}</b>
+    — إصدار: <b>${f(iss)}</b>
+    — محصّل: <b>${f(col)}</b>
+    — متبقي: <b>${f(tot - col)}</b></span>
+  `;
+
+  const blks = uniq(secRows.map(d => d[1]));
+  if(!blks.length){
+    $('blocksBody').innerHTML =
+      '<div class="empty">لا توجد بلوكات في هذا القطاع</div>';
+    return;
+  }
+
+  let h = `<table>
+    <thead><tr>
+      <th style="width:22%;text-align:right;padding-inline-start:14px">البلوك</th>
+      <th>إجمالي المديونية</th>
+      <th>المحصّل</th>
+      <th>المتبقي</th>
+    </tr></thead>
+    <tbody>`;
+
+  blks.forEach(b => {
+    const bRows = secRows.filter(d => d[1] === b);
+    const bTot = sum(bRows, 6);
+    const bCol = paid
+      .filter(p => p.s === s && p.b === b)
+      .reduce((a,p) => a + p.v, 0);
+    const bRem = bTot - bCol;
+    const bid = `b-${s}-${b}`;
+    const open = openBlk.has(bid);
+
+    h += `
+      <tr class="rowbtn" data-blk="${bid}">
+        <td class="lb">
+          <span class="arrow ${open ? 'open' : ''}">▶</span>
+          بلوك ${p2(b)}
+        </td>
+        <td class="v">${f(bTot)}</td>
+        <td class="v">${f(bCol)}</td>
+        <td class="v">${f(bRem)}</td>
+      </tr>
+    `;
+
+    if(open){
+      const blds = uniq(bRows.map(d => d[2]));
+      h += `<tr><td colspan="4" style="padding:0">
+        <table class="subrow">
+          <thead><tr>
+            <th style="width:22%;text-align:right;padding-inline-start:14px">العمارة</th>
+            <th>إجمالي المديونية</th>
+            <th>المحصّل</th>
+            <th>المتبقي</th>
+          </tr></thead>
+          <tbody>`;
+
+      blds.forEach(m => {
+        const mRows = bRows.filter(d => d[2] === m);
+        const mTot = sum(mRows, 6);
+        const mCol = paid
+          .filter(p => p.s===s && p.b===b && p.m===m)
+          .reduce((a,p) => a + p.v, 0);
+        h += `
+          <tr>
+            <td class="lb">عمارة ${p2(m)}</td>
+            <td class="v">${f(mTot)}</td>
+            <td class="v">${f(mCol)}</td>
+            <td class="v">${f(mTot - mCol)}</td>
+          </tr>
+        `;
+      });
+
+      h += `</tbody></table></td></tr>`;
+    }
+  });
+
+  h += `</tbody></table>`;
+  $('blocksBody').innerHTML = h;
+}
+
+/* ═══════════ السجل اليومي ═══════════ */
+function renderDays(){
+  const D = {};
+  paid.forEach(p => {
+    const k = dayKey(p.t);
+    if(!D[k]) D[k] = { t: p.t, L: [] };
+    D[k].L.push(p);
+  });
+
+  const ks = Object.keys(D).sort().reverse();
+  if(!ks.length){
+    $('days').innerHTML = '<div class="empty">لا توجد تحصيلات بعد</div>';
+    return;
+  }
+
+  $('days').innerHTML = ks.map(k => {
+    const x = D[k];
+    const rows = x.L
+      .slice()
+      .sort((a,b) => b.t - a.t)
+      .map(p => payLine(p, true))
+      .join('');
+    return `
+      <div class="dayBlock">
+        <div class="dayHead">
+          <span>${dayLabel(x.t)}
+            <span class="cnt">(${x.L.length} شقة)</span>
+          </span>
+          <b>${f(sumP(x.L))}</b>
+        </div>
+        <div class="dayBody">${rows}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ═══════════ سطر الدفع ═══════════ */
+function payLine(p, undo){
+  const tag = p.outside
+    ? '<span style="color:var(--accent);font-size:11px">[خارج النطاق]</span>'
+    : '';
+  return `
+    <div class="line">
+      <span>
+        <b style="color:var(--tx)">${esc(p.n)}</b> ${tag}
+        <br><small>قطاع ${p2(p.s)} - بلوك ${p2(p.b)} - عمارة ${p2(p.m)} - شقة ${p2(p.a)}</small>
+      </span>
+      <span>
+        <b>${f(p.v)}</b>
+        ${undo ? `<button class="red" data-t="${p.t}">تراجع</button>` : ''}
+      </span>
+    </div>
+  `;
+}
+
+/* ═══════════ تراجع عن دفعة ═══════════ */
+function undoPayment(ts){
+  const p = paid.find(x => String(x.t) === String(ts));
+  if(!p) return;
+  if(!confirm(`إلغاء سداد شقة ${p2(p.a)} (عمارة ${p2(p.m)})؟`)) return;
+
+  paid = paid.filter(x => x !== p);
+  outsidePaid = outsidePaid.filter(x => String(x.t) !== String(ts));
+  savePaid();
+  saveOutsidePaid();
+
+  renderDetails();
+  refresh();
+}
+
+/* ═══════════ تسديدات خارج النطاق ═══════════ */
+function renderOutside(){
+  const box = $('outsideBody');
+  if(!box) return;
+
+  if(!outsidePaid.length){
+    box.innerHTML = '<div class="empty">لا توجد تسديدات خارج النطاق</div>';
+    return;
+  }
+
+  const inScopeTotal = paid
+    .filter(p => !p.outside)
+    .reduce((a,p) => a + p.v, 0);
+  const outScopeTotal = outsidePaid.reduce((a,p) => a + p.v, 0);
+
+  let h = `
+    <div class="outsideSummary">
+      <div class="item">
+        <div class="lbl">داخل النطاق</div>
+        <div class="num">${f(inScopeTotal)}</div>
+      </div>
+      <div class="item">
+        <div class="lbl">خارج النطاق</div>
+        <div class="num">${f(outScopeTotal)}</div>
+      </div>
+      <div class="item">
+        <div class="lbl">الإجمالي</div>
+        <div class="num">${f(inScopeTotal + outScopeTotal)}</div>
+      </div>
+    </div>
+  `;
+
+  h += outsidePaid
+    .slice()
+    .sort((a,b) => b.t - a.t)
+    .map(p => `
+      <div class="line">
+        <span>
+          <b style="color:var(--tx)">${esc(p.n)}</b>
+          <br><small>ق ${p2(p.s)} - ب ${p2(p.b)} - ع ${p2(p.m)} - ش ${p2(p.a)}</small>
+        </span>
+        <b>${f(p.v)}</b>
+      </div>
+    `).join('');
+
+  box.innerHTML = h;
+}
+
+/* ═══════════ الأرشيف ═══════════ */
+function renderArchive(){
+  const box = $('archiveBody');
+  if(!box) return;
+
+  const cm = monthKey();
+  const cmPaid = paid.filter(p => monthKey(new Date(p.t)) === cm);
+  const cmTotal = sumP(cmPaid);
+
+  let h = `
+    <div style="padding:12px 14px;background:var(--bg-alt);border-radius:12px;margin-bottom:10px;border:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--pr);font-size:14px;margin-bottom:8px">
+        <span>📅 ${monthLabel(cm)} (الشهر الحالي)</span>
+        <b style="color:var(--pr2);direction:ltr;font-size:15px">${f(cmTotal)}</b>
+      </div>
+      <div style="font-size:12px;color:var(--mu)">
+        عدد العمليات: ${cmPaid.length}
+      </div>
+    </div>
+  `;
+
+  if(!arcIdx.length){
+    h += '<div class="empty">لا توجد شهور مؤرشفة بعد</div>';
+    box.innerHTML = h;
+    return;
+  }
+
+  h += arcIdx.map(a => `
+    <div style="padding:12px 14px;background:var(--bg-alt);border-radius:12px;margin-bottom:10px;border:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--pr);font-size:14px;margin-bottom:8px">
+        <span>📦 ${monthLabel(a.m)}</span>
+        <b style="color:var(--pr2);direction:ltr;font-size:15px">${f(a.total)}</b>
+      </div>
+      <div style="font-size:12px;color:var(--mu);margin-bottom:8px">
+        عدد العمليات: ${a.n}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+        <button class="mini" data-sub="m${a.k}">تفاصيل العملاء</button>
+        <button class="mini" data-dl="log" data-k="${a.k}">
+          تنزيل سجل التحصيل (JSON)
+        </button>
+      </div>
+      <div class="${openSub.has('m' + a.k) ? '' : 'hidden'}"
+           id="s-m${a.k}"></div>
+    </div>
+  `).join('');
+
+  box.innerHTML = h;
+
+  openSub.forEach(id => {
+    if(id.startsWith('m')) fillMonth(id.slice(1));
+  });
+}
+
+/* ═══════════ تحميل تفاصيل شهر ═══════════ */
+async function fillMonth(k){
+  const box = $('s-m' + k);
+  if(!box) return;
+  try{
+    const e = await kvGet(k);
+    if(e && e.paid && e.paid.length){
+      box.innerHTML = e.paid
+        .slice()
+        .sort((a,b) => b.t - a.t)
+        .map(p => payLine(p, false))
+        .join('');
+    } else {
+      box.innerHTML = '<div class="empty">لا توجد تحصيلات</div>';
+    }
+  }catch(err){
+    box.innerHTML = '<div class="empty">تعذر تحميل الأرشيف</div>';
+  }
+}
+
+/* ═══════════ تنزيل ملف أرشيف ═══════════ */
+async function downloadArchive(k, type){
+  try{
+    const e = await kvGet(k);
+    if(!e){ alert('الأرشيف غير موجود'); return; }
+
+    if(type === 'log'){
+      downloadJson(e.paid || [], `collections-${e.m}.json`);
+    } else if(type === 'raw'){
+      downloadJson(e.raw || [], `raw-${e.m}.json`);
+    } else if(type === 'work'){
+      const ps = new Set(e.paid.map(p => key(p.s,p.b,p.m,p.a)));
+      const work = (e.raw || []).filter(r => !ps.has(key(r[0],r[1],r[2],r[3])));
+      downloadJson(work, `work-${e.m}.json`);
+    }
+  }catch(err){
+    alert('تعذر قراءة الأرشيف');
+  }
+}
+
+/* ═══════════ استقبال ملف مشفَّر من الأدمن ═══════════ */
+async function decryptUploadedFiles(){
+  const files = [...$('encFile').files];
+  if(!files.length){
+    alert('اختر ملفاً واحداً على الأقل');
+    return;
+  }
+
+  const st = $('decStatus');
+  st.classList.remove('hidden');
+  st.textContent = `⏳ جاري فك تشفير ${files.length} ملف...`;
+
+  try{
+    const pw = sessionStorage.getItem('collect_member_pw');
+    if(!pw) throw new Error('يجب تسجيل الدخول من جديد');
+
+    const allNewRows = [];
+    const sources = [];
+    let incomingScope = null;
+
+    for(const file of files){
+      const text = await file.text();
+      const encObj = JSON.parse(text);
+      if(!encObj.data || !encObj.salt){
+        throw new Error(`الملف "${file.name}" بصيغة غير صحيحة`);
+      }
+      const dec = decryptData(encObj, pw);
+      if(!dec){
+        throw new Error(`كلمة المرور غير صحيحة أو الملف "${file.name}" تالف`);
+      }
+      if(dec.owner && dec.owner !== currentUser.name){
+        throw new Error(`الملف "${file.name}" مخصص للعضو "${dec.owner}" وليس لك`);
+      }
+
+      if(Array.isArray(dec.data)) allNewRows.push(...dec.data);
+
+      if(dec.scope && Array.isArray(dec.scope) && dec.scope.length){
+        incomingScope = dec.scope;
+      }
+
+      sources.push(file.name);
+    }
+
+    if(!allNewRows.length) throw new Error('لا توجد بيانات صالحة في الملفات');
+
+    const newMap = new Map();
+    allNewRows.forEach(d => newMap.set(key(d[0],d[1],d[2],d[3]), d));
+    const newRows = [...newMap.values()];
+
+    if(incomingScope){
+      saveScopeToSession(incomingScope);
+    }
+
+    const currentRows = Array.isArray(DATA) ? DATA : [];
+
+    showDecryptChoice(newRows, sources, currentRows, incomingScope);
+    st.textContent = '';
+    st.classList.add('hidden');
+  }catch(e){
+    st.textContent = '❌ ' + (e.message || e);
+  }
+}
+
+/* ═══════════ نافذة اختيار استبدال/دمج ═══════════ */
+function showDecryptChoice(newRows, sources, currentRows, incomingScope){
+  const old = document.getElementById('choiceModal');
+  if(old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.id = 'choiceModal';
+
+  const newCount = newRows.length;
+  const curCount = currentRows.length;
+
+  const curMap = new Map(currentRows.map(d => [key(d[0],d[1],d[2],d[3]), d]));
+  let added = 0, updated = 0, unchanged = 0;
+
+  newRows.forEach(d => {
+    const k = key(d[0],d[1],d[2],d[3]);
+    if(!curMap.has(k)) added++;
+    else {
+      const o = curMap.get(k);
+      if(o[4] === d[4] && o[5] === d[5] && o[6] === d[6]) unchanged++;
+      else updated++;
+    }
+  });
+
+  const scopeText = incomingScope && incomingScope.length
+    ? `${incomingScope.length} نطاق`
+    : 'كل البيانات';
+
+  modal.innerHTML = `
+    <div class="modalBox" style="max-width:480px">
+      <h3>📥 تم فك تشفير ${sources.length} ملف</h3>
+      <div style="font-size:12px;color:var(--mu);text-align:center;margin-bottom:12px;word-break:break-word">
+        ${sources.map(esc).join('<br>')}
+      </div>
+      <div style="background:linear-gradient(135deg,var(--soft),var(--soft2));border-radius:12px;padding:14px;margin-bottom:14px;font-size:13px;line-height:2;border:1px solid var(--pr2)">
+        <div>📊 <b>عدد العملاء الجدد:</b> <span style="direction:ltr;display:inline-block">${f(newCount)}</span></div>
+        <div>📁 <b>عدد العملاء الحاليين:</b> <span style="direction:ltr;display:inline-block">${f(curCount)}</span></div>
+        <hr style="border:none;border-top:1px dashed var(--bd);margin:8px 0">
+        <div>➕ <b style="color:#16a34a">جديد (سيُضاف):</b> ${f(added)}</div>
+        <div>🔄 <b style="color:#0284c7">مُعدَّل:</b> ${f(updated)}</div>
+        <div>🟰 <b style="color:var(--mu)">مطابق:</b> ${f(unchanged)}</div>
+        <hr style="border:none;border-top:1px dashed var(--bd);margin:8px 0">
+        <div>🎯 <b>النطاق الوارد:</b> ${scopeText}</div>
+      </div>
+      <div style="font-size:13px;text-align:center;margin-bottom:14px;font-weight:700">
+        اختر طريقة التحميل:
+      </div>
+      <div style="display:grid;gap:10px">
+        <button class="big ok" id="chMerge" style="height:auto;padding:14px;line-height:1.5">
+          ➕ تحديث / دمج
+          <div style="font-size:11px;font-weight:600;opacity:.9;margin-top:4px">
+            يحتفظ بالبيانات القديمة ويضيف الجديدة
+          </div>
+        </button>
+        <button class="big danger" id="chReplace" style="height:auto;padding:14px;line-height:1.5">
+          🔄 استبدال كل البيانات
+          <div style="font-size:11px;font-weight:600;opacity:.9;margin-top:4px">
+            يحذف البيانات الحالية ويضع الجديدة
+          </div>
+        </button>
+        <button class="big" id="chCancel"
+                style="height:46px;background:var(--bd-strong);color:var(--tx);box-shadow:none">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelector('#chCancel').onclick = () => {
+    modal.remove();
+    $('encFile').value = '';
+  };
+
+  modal.querySelector('#chReplace').onclick = async () => {
+    if(!confirm('سيتم حذف كل البيانات الحالية واستبدالها. متابعة؟')) return;
+    DATA = newRows;
+    await saveData();
+    modal.remove();
+    $('encFile').value = '';
+    refresh();
+    const st = $('decStatus');
+    st.classList.remove('hidden');
+    st.textContent = `✅ تم استبدال البيانات: ${f(DATA.length)} عميل`;
+  };
+
+  modal.querySelector('#chMerge').onclick = async () => {
+    const mergedMap = new Map(currentRows.map(d => [key(d[0],d[1],d[2],d[3]), d]));
+    newRows.forEach(d => mergedMap.set(key(d[0],d[1],d[2],d[3]), d));
+    DATA = [...mergedMap.values()];
+    await saveData();
+    modal.remove();
+    $('encFile').value = '';
+    refresh();
+    const st = $('decStatus');
+    st.classList.remove('hidden');
+    st.textContent = `✅ تم الدمج: ${f(DATA.length)} عميل (+${f(added)} جديد)`;
+  };
+}
+
+/* ═══════════ الإقلاع ═══════════ */
+async function initApp(){
+  renderLoginUsers();
+
+  const s = getSession();
+  if(s && s.role === 'member'){
+    currentUser = s;
+    await showMember();
+    return;
+  }
+
+  // ربط أحداث الدخول
+  const userList = $('userList');
+  if(userList){
+    userList.onclick = e => {
+      const b = e.target.closest('.userBtn');
+      if(!b) return;
+      selectedUser = b.dataset.u;
+      document.querySelectorAll('.userBtn').forEach(x =>
+        x.classList.toggle('on', x === b));
+      $('pw').focus();
+    };
+  }
+
+  const loginBtn = $('loginBtn');
+  if(loginBtn) loginBtn.onclick = doLogin;
+
+  const pwEl = $('pw');
+  if(pwEl){
+    pwEl.addEventListener('keydown', e => {
+      if(e.key === 'Enter') doLogin();
+    });
+  }
+
+  // Service Worker
+  if('serviceWorker' in navigator){
+    try{ await navigator.serviceWorker.register('/sw.js'); }catch(e){}
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+
+console.log('✅ index.html تم تحميله بالكامل');
+</script>
+</body>
+</html>

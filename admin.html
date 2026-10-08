@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#d97706">
+<link rel="manifest" href="/manifest.json">
+<title>لوحة الأدمن — تحصيل المديونية</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   CSS كامل — main + admin
+   ========================================================= */
+
+/* ═══════════════ المتغيرات ═══════════════ */
+:root{
+  --bg:#f8fafc;
+  --bg-alt:#eef2f7;
+  --card:#ffffff;
+  --tx:#0f172a;
+  --mu:#64748b;
+  --bd:#e2e8f0;
+  --bd-strong:#cbd5e1;
+  --pr:#0d4d4d;
+  --pr2:#14b8a6;
+  --pr3:#0f766e;
+  --accent:#f59e0b;
+  --accent2:#d97706;
+  --soft:#ccfbf1;
+  --soft2:#d1fae5;
+  --warn:#fef3c7;
+  --danger:#dc2626;
+  --danger2:#b91c1c;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06);
+  --shadow:0 4px 16px rgba(13,77,77,.08);
+  --shadow-lg:0 12px 40px rgba(13,77,77,.15);
+  --radius:16px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0a1628;
+    --bg-alt:#0f1e35;
+    --card:#132441;
+    --tx:#f1f5f9;
+    --mu:#94a3b8;
+    --bd:#1e3a5f;
+    --bd-strong:#334155;
+    --soft:#134e4a;
+    --soft2:#064e3b;
+    --warn:#422006;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.3);
+    --shadow:0 4px 16px rgba(0,0,0,.4);
+    --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  }
+}
+
+/* ═══════════════ إعادة الضبط ═══════════════ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100vh}
+body{
+  font-family:'Tajawal',-apple-system,'Segoe UI',Tahoma,Roboto,sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(20,184,166,.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(245,158,11,.06) 0%, transparent 45%);
+  background-attachment:fixed;
+  color:var(--tx);
+  padding-bottom:calc(60px + env(safe-area-inset-bottom,0px));
+  font-size:15px;
+  line-height:1.5;
+}
+
+/* ═══════════════ الهيدر ═══════════════ */
+header{
+  background:linear-gradient(135deg,#d97706 0%,#b45309 100%);
+  color:#fff;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 16px;
+  text-align:center;
+  border-radius:0 0 24px 24px;
+  box-shadow:0 8px 32px rgba(217,119,6,.3);
+  position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 30% -20%, rgba(255,255,255,.3) 0%, transparent 60%);
+  pointer-events:none;
+}
+header h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.2px;position:relative}
+.hrow{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:6px;position:relative;z-index:1;flex-wrap:wrap;
+}
+.hbtn{
+  background:rgba(255,255,255,.2);color:#fff;padding:8px 11px;
+  font-size:12px;border:1px solid rgba(255,255,255,.4);
+  border-radius:10px;font-weight:700;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:background .2s ease;font-family:inherit;cursor:pointer;
+}
+.hbtn:hover{background:rgba(255,255,255,.3)}
+
+/* ═══════════════ البطاقات ═══════════════ */
+.card{
+  background:var(--card);margin:12px;padding:14px;
+  border-radius:var(--radius);border:1px solid var(--bd);
+  box-shadow:var(--shadow-sm);transition:box-shadow .25s ease;
+}
+.card:hover{box-shadow:var(--shadow)}
+.sec{
+  display:flex;justify-content:space-between;align-items:center;
+  font-weight:800;font-size:14px;margin-bottom:10px;
+  color:var(--pr);padding-bottom:8px;border-bottom:1px dashed var(--bd);
+}
+@media (prefers-color-scheme:dark){.sec{color:var(--pr2)}}
+
+/* ═══════════════ النماذج ═══════════════ */
+label{
+  display:block;font-size:12px;font-weight:700;color:var(--mu);
+  margin-bottom:6px;text-align:center;letter-spacing:.3px;
+}
+select,input[type="text"],input[type="password"],input[type="number"]{
+  width:100%;height:48px;padding:0 12px;
+  border:1.5px solid var(--bd-strong);border-radius:12px;
+  background:var(--bg-alt);color:var(--tx);font-family:inherit;
+  font-size:14.5px;font-weight:700;text-align:center;
+  transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+select{text-align-last:center}
+input:focus,select:focus{
+  outline:none;border-color:var(--pr2);background:var(--card);
+  box-shadow:0 0 0 4px rgba(20,184,166,.15);
+}
+select:disabled{opacity:.5;cursor:not-allowed}
+
+/* ═══════════════ شبكة 4 حقول ═══════════════ */
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;direction:rtl}
+.row4>div{display:flex;flex-direction:column}
+.row4 input{height:42px;padding:0 8px;font-size:13.5px;font-weight:700;text-align:center}
+
+/* ═══════════════ الجداول ═══════════════ */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  background:linear-gradient(135deg,#0d4d4d,#0f766e);color:#fff;
+  padding:10px 4px;font-size:12px;font-weight:700;letter-spacing:.2px;
+}
+thead th:first-child{border-radius:0 10px 0 0}
+thead th:last-child{border-radius:10px 0 0 0}
+tbody td{
+  padding:10px 4px;border-bottom:1px solid var(--bd);text-align:center;
+  transition:background .15s ease;
+}
+tbody tr:nth-child(even) td{background:var(--bg-alt)}
+tbody tr:hover td{background:var(--soft)}
+td.nm{text-align:right;font-weight:800}
+td.v{font-weight:800;color:var(--pr);direction:ltr}
+@media (prefers-color-scheme:dark){td.v{color:var(--pr2)}}
+tr.tot td{
+  background:linear-gradient(135deg,var(--soft),var(--soft2)) !important;
+  font-weight:800;border-top:2px solid var(--pr2);
+  font-size:14px;padding:12px 4px;
+}
+
+/* ═══════════════ الحالة الفارغة ═══════════════ */
+.empty{
+  text-align:center;color:var(--mu);padding:24px 8px;
+  font-size:13px;font-weight:600;
+}
+.empty::before{content:'📭';display:block;font-size:32px;margin-bottom:8px;opacity:.5}
+
+/* ═══════════════ الأزرار ═══════════════ */
+button{
+  border:none;border-radius:12px;font-family:inherit;font-weight:800;
+  cursor:pointer;color:#fff;
+  transition:transform .12s ease, box-shadow .2s ease, opacity .2s ease;
+  position:relative;overflow:hidden;
+}
+button::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%);
+  transform:translateX(-100%);transition:transform .6s ease;
+}
+button:hover::after{transform:translateX(100%)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+[dir="rtl"] button::after{transform:translateX(100%)}
+[dir="rtl"] button:hover::after{transform:translateX(-100%)}
+
+.big{
+  width:100%;height:48px;font-size:15px;
+  background:linear-gradient(135deg,#0ea5e9,#0369a1);
+  box-shadow:0 4px 14px rgba(14,165,233,.25);
+}
+.big.ok{
+  background:linear-gradient(135deg,#14b8a6,#0f766e);
+  box-shadow:0 4px 14px rgba(20,184,166,.3);
+}
+.big.danger{
+  background:linear-gradient(135deg,var(--danger),var(--danger2));
+  box-shadow:0 4px 14px rgba(220,38,38,.25);
+}
+.big.gold{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 4px 14px rgba(245,158,11,.3);
+}
+.link{background:none;color:var(--pr);padding:6px 10px;font-size:13px;font-weight:700}
+.link::after{display:none}
+@media (prefers-color-scheme:dark){.link{color:var(--pr2)}}
+.red{background:none;color:#dc2626;padding:4px 8px;font-size:12px;font-weight:700}
+.red::after{display:none}
+
+/* ═══════════════ المربعات ═══════════════ */
+.hidden{display:none!important}
+.ok{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  border:1.5px solid var(--pr2);border-radius:12px;
+  padding:10px 14px;font-size:13px;font-weight:700;
+  margin-bottom:10px;color:var(--pr);
+}
+@media (prefers-color-scheme:dark){.ok{color:var(--pr2)}}
+.line{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:8px;padding:9px 4px;border-bottom:1px dashed var(--bd);font-size:13px;
+}
+.line b{direction:ltr;color:var(--pr)}
+.line.sum{
+  border:none;font-size:15px;font-weight:800;
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  padding:11px 12px;border-radius:10px;margin-top:8px;
+}
+.line small{color:var(--mu);font-weight:600}
+
+/* ═══════════════ النوافذ المنبثقة ═══════════════ */
+.modal{
+  position:fixed;inset:0;background:rgba(15,23,42,.6);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:16px;overflow-y:auto;
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modalBox{
+  background:var(--card);border-radius:20px;padding:24px 22px;
+  width:100%;max-width:400px;box-shadow:var(--shadow-lg);
+  margin:auto;animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modalBox h3{
+  margin:0 0 16px;text-align:center;color:var(--pr);
+  font-size:17px;font-weight:800;
+}
+.modalBox .field{margin-bottom:14px}
+.modalBox label{text-align:right;margin-bottom:6px}
+.modalBox .buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.modalBox .buttons button{height:46px;font-size:14px}
+.btnCancel{background:var(--bd-strong);color:var(--tx);box-shadow:none}
+.btnConfirm{background:linear-gradient(135deg,#16a34a,#15803d);box-shadow:0 4px 14px rgba(22,163,74,.3)}
+
+/* ═══════════════ التقدم ═══════════════ */
+.progress{
+  background:var(--bd);height:8px;border-radius:4px;
+  overflow:hidden;margin-top:12px;
+}
+.progress .bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--pr),var(--pr2),var(--accent));
+  width:0%;transition:width .4s ease;border-radius:4px;
+}
+
+/* ═══════════════ ملف المعلومات ═══════════════ */
+.fileInfo{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  padding:12px;border-radius:12px;font-size:12.5px;
+  color:var(--pr);margin-top:12px;text-align:center;
+  font-weight:700;white-space:pre-line;
+  border:1px solid var(--pr2);line-height:1.7;
+}
+@media (prefers-color-scheme:dark){.fileInfo{color:var(--pr2)}}
+
+/* ═══════════════ الفوتر ═══════════════ */
+.devFooter{
+  text-align:center;
+  padding:32px 16px calc(28px + env(safe-area-inset-bottom,0px));
+  margin-top:20px;position:relative;
+}
+.devFooter::before{
+  content:'';display:block;width:60px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--pr2),transparent);
+  margin:0 auto 16px;border-radius:2px;
+}
+.devFooter .dev-label{
+  font-family:'Cormorant Garamond','Times New Roman',Georgia,serif;
+  font-style:italic;font-weight:300;font-size:13px;color:var(--mu);
+  letter-spacing:.5px;margin-bottom:4px;opacity:.75;
+}
+.devFooter .dev-name{
+  font-family:'Cormorant Garamond','Times New Roman',Georgia,serif;
+  font-style:italic;font-weight:300;font-size:15px;
+  color:var(--pr);letter-spacing:1.5px;opacity:.9;
+}
+@media (prefers-color-scheme:dark){.devFooter .dev-name{color:var(--pr2)}}
+
+/* ═══════════════ شاشة دخول الأدمن ═══════════════ */
+#adminLoginView .loginCard{
+  border:2px solid var(--accent);
+  box-shadow:0 12px 40px rgba(217,119,6,.25);
+}
+.loginWrap{
+  min-height:calc(100vh - 40px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 14px;gap:20px;
+}
+.loginCard{
+  width:100%;max-width:440px;background:var(--card);
+  border-radius:22px;padding:28px 24px;
+  border:1px solid var(--bd);box-shadow:var(--shadow-lg);
+  position:relative;overflow:hidden;
+}
+.loginCard::before{
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:200px;height:200px;
+  background:radial-gradient(circle, rgba(245,158,11,.15), transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
+.loginCard h2{
+  text-align:center;color:var(--accent2);font-size:22px;
+  margin:0 0 6px;font-weight:800;position:relative;
+}
+.loginCard .sub{
+  text-align:center;color:var(--mu);font-size:13px;
+  margin-bottom:22px;font-weight:600;
+}
+.loginCard .field{margin-bottom:16px}
+.loginCard label{text-align:right;font-size:13px;margin-bottom:6px}
+.err{
+  background:linear-gradient(135deg,#fee2e2,#fecaca);
+  color:#991b1b;padding:10px 14px;border-radius:10px;
+  font-size:13px;font-weight:700;margin-bottom:12px;
+  text-align:center;border:1px solid #f87171;
+}
+
+/* ═══════════════ قائمة المستخدمين ═══════════════ */
+.userRow{
+  display:grid;grid-template-columns:1fr auto auto;gap:10px;
+  align-items:center;padding:12px 14px;background:var(--bg-alt);
+  border-radius:12px;margin-bottom:8px;border:1px solid var(--bd);
+  transition:all .2s ease;
+}
+.userRow:hover{
+  background:var(--card);box-shadow:var(--shadow-sm);border-color:var(--pr2);
+}
+.userRow .name{font-weight:800;font-size:15px;text-align:right}
+.userRow .pass{
+  font-size:11px;color:var(--mu);direction:ltr;
+  font-family:'Courier New',monospace;margin-top:2px;font-weight:600;
+}
+.iconBtn{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;padding:0;transition:transform .15s ease;
+}
+.iconBtn:hover{transform:translateY(-2px)}
+.iconBtn.edit{
+  background:linear-gradient(135deg,#0ea5e9,#0369a1);
+  box-shadow:0 2px 8px rgba(14,165,233,.3);
+}
+.iconBtn.del{
+  background:linear-gradient(135deg,var(--danger),var(--danger2));
+  box-shadow:0 2px 8px rgba(220,38,38,.3);
+}
+
+.addBox{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  border:2px dashed var(--pr2);border-radius:14px;
+  padding:16px;margin-top:14px;
+}
+.addBox h4{
+  margin:0 0 12px;color:var(--pr);
+  font-size:14px;text-align:center;font-weight:800;
+}
+.addBox .row{display:grid;gap:10px;margin-bottom:10px}
+.addBox input{text-align:right;padding:0 14px}
+
+/* ═══════════════ النطاقات ═══════════════ */
+#scopesListBox{margin-bottom:12px}
+.scopeItem{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  border:1.5px solid var(--pr2);border-radius:12px;padding:12px 14px;
+  margin-bottom:8px;display:grid;grid-template-columns:1fr auto;
+  gap:10px;align-items:center;
+}
+.scopeItem .scopeInfo{
+  font-size:13px;line-height:1.8;color:var(--pr);font-weight:700;
+}
+.scopeItem .scopeInfo .fromTo{
+  display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;
+}
+.scopeItem .scopeInfo .tag{
+  background:var(--card);padding:3px 8px;border-radius:6px;
+  font-size:11.5px;direction:ltr;border:1px solid var(--bd-strong);
+  font-family:'Courier New',monospace;
+}
+
+/* ═══════════════ الأزرار الديناميكية ═══════════════ */
+.dynBtnItem{
+  background:var(--bg-alt);border:1px solid var(--bd);
+  border-radius:12px;padding:12px 14px;margin-bottom:8px;
+  display:grid;grid-template-columns:1fr auto;gap:10px;
+  align-items:center;transition:all .2s ease;
+}
+.dynBtnItem:hover{
+  background:var(--card);border-color:var(--pr2);
+  box-shadow:var(--shadow-sm);
+}
+.dynBtnItem .info .name{
+  font-weight:800;font-size:14px;color:var(--tx);margin-bottom:2px;
+}
+.dynBtnItem .info .file{
+  font-size:11.5px;color:var(--mu);direction:ltr;
+  font-family:'Courier New',monospace;font-weight:600;
+}
+
+/* ═══════════════ الإحصائيات ═══════════════ */
+.stat{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;
+}
+.stat>div{
+  background:linear-gradient(135deg,var(--soft),var(--soft2));
+  padding:12px;border-radius:10px;text-align:center;
+  border:1px solid var(--pr2);
+}
+.stat .t{
+  font-size:11px;color:var(--mu);font-weight:700;margin-bottom:4px;
+}
+.stat .n{
+  font-size:20px;font-weight:800;color:var(--pr);direction:ltr;
+}
+@media (prefers-color-scheme:dark){.stat .n{color:var(--pr2)}}
+
+/* ═══════════════ المعاينة ═══════════════ */
+#previewTable{width:100%;border-collapse:collapse;font-size:12.5px}
+#previewTable thead th{
+  background:linear-gradient(135deg,#d97706,#b45309);
+  color:#fff;padding:8px 4px;font-size:11.5px;font-weight:700;
+}
+#previewTable tbody td{
+  padding:8px 4px;border-bottom:1px solid var(--bd);text-align:center;
+}
+#previewTable tbody tr:nth-child(even) td{background:var(--bg-alt)}
+#previewTable tbody td:nth-child(6){text-align:right;font-weight:700}
+#previewTable tbody td:nth-child(7),
+#previewTable tbody td:nth-child(8){
+  direction:ltr;font-weight:800;color:var(--pr);
+}
+@media (prefers-color-scheme:dark){
+  #previewTable tbody td:nth-child(7),
+  #previewTable tbody td:nth-child(8){color:var(--pr2)}
+}
+
+/* ═══════════════ السجل ═══════════════ */
+.log{
+  background:#0f172a;color:#a5f3fc;padding:12px;
+  border-radius:10px;font-family:'Courier New',monospace;
+  font-size:12px;direction:ltr;text-align:left;
+  max-height:250px;overflow-y:auto;white-space:pre-wrap;
+  line-height:1.7;border:1px solid #1e3a5f;
+}
+.log:empty::before{
+  content:'لا توجد عمليات بعد...';color:#64748b;font-style:italic;
+}
+
+/* ═══════════════ الأرشيف ═══════════════ */
+.archivePreview{
+  background:var(--bg-alt);border:1px solid var(--bd);
+  border-radius:12px;padding:14px;margin-top:12px;
+}
+.archivePreview .memberTag{
+  display:inline-block;background:linear-gradient(135deg,#d97706,#b45309);
+  color:#fff;padding:4px 12px;border-radius:20px;
+  font-weight:800;font-size:13px;margin-bottom:10px;
+}
+.archivePreview .row{
+  display:flex;justify-content:space-between;
+  padding:8px 4px;border-bottom:1px dashed var(--bd);font-size:13px;
+}
+.archivePreview .row b{color:var(--pr);direction:ltr}
+@media (prefers-color-scheme:dark){.archivePreview .row b{color:var(--pr2)}}
+
+/* ═══════════════ iframe ═══════════════ */
+#dynIframeView{
+  position:fixed;inset:0;background:#f1f5f9;
+  z-index:9999;display:flex;flex-direction:column;overflow:hidden;
+}
+#dynIframeView .topBar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 16px;
+  background:linear-gradient(135deg,#0f766e,#14b8a6);
+  color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.2);flex-shrink:0;
+}
+#dynIframeView .topBar .title{font-weight:800;font-size:15px}
+#dynIframeView .topBar .closeBtn{
+  background:rgba(255,255,255,.25);color:#fff;
+  padding:8px 16px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.4);
+  font-weight:700;cursor:pointer;font-family:inherit;font-size:14px;
+}
+#dynIframeView iframe{
+  width:100%;flex:1;border:none;display:block;background:#fff;
+}
+
+/* ═══════════════ الأزرار الديناميكية (شريط) ═══════════════ */
+#dynamicBtnsBar{
+  display:flex;gap:8px;padding:10px 12px;
+  overflow-x:auto;flex-wrap:nowrap;
+  background:linear-gradient(135deg,#d97706,#b45309);
+  border-bottom:none;box-shadow:var(--shadow-sm);
+  position:sticky;top:0;z-index:50;scrollbar-width:thin;
+}
+#dynamicBtnsBar::-webkit-scrollbar{height:4px}
+#dynamicBtnsBar::-webkit-scrollbar-thumb{background:#fff;border-radius:4px}
+.dynBtn{
+  background:rgba(255,255,255,.25);color:#fff;
+  padding:10px 16px;border-radius:12px;
+  font-size:13px;font-weight:800;white-space:nowrap;
+  flex-shrink:0;border:1px solid rgba(255,255,255,.4);
+  backdrop-filter:blur(8px);font-family:inherit;cursor:pointer;
+}
+.dynBtn:hover{background:rgba(255,255,255,.4)}
+
+/* ═══════════════ الموبايل ═══════════════ */
+@media (max-width:520px){
+  .row4{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{grid-template-columns:repeat(2,1fr)}
+  .userRow{grid-template-columns:1fr auto;gap:8px}
+  .userRow .iconBtn{width:36px;height:36px}
+}
+</style>
+</head>
+<body>
+
+
+
+<!-- =========================================================
+     شاشة تسجيل دخول الأدمن
+     ========================================================= -->
+<div id="adminLoginView">
+  <div class="loginWrap">
+    <div class="loginCard">
+      <h2>👨‍💼 لوحة الأدمن</h2>
+      <div class="sub">أدخل كلمة مرور الأدمن</div>
+      <div id="adminLoginErr" class="err hidden"></div>
+      <div class="field">
+        <label for="adminPw">كلمة المرور</label>
+        <input type="password" id="adminPw" autocomplete="off" placeholder="••••••••">
+      </div>
+      <button class="big gold" id="adminLoginBtn" style="height:52px;font-size:16px">
+        دخول
+      </button>
+      <div style="font-size:11.5px;color:var(--mu);text-align:center;margin-top:12px">
+        لإعادة التعيين، أدخل <b>1711</b>
+      </div>
+    </div>
+    <div class="devFooter" style="max-width:440px;width:100%;margin-top:0">
+      <div class="dev-label">Developed by</div>
+      <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     لوحة الأدمن
+     ========================================================= -->
+<div id="adminView" class="hidden">
+
+  <header>
+    <div class="hrow">
+      <h1>👨‍💼 لوحة تحكم الأدمن</h1>
+      <button class="hbtn" id="adminLogoutBtn">خروج</button>
+    </div>
+  </header>
+
+  <!-- شريط الأزرار الديناميكية -->
+  <div id="dynamicBtnsBar" class="hidden"></div>
+
+  <!-- ═══════════ إدارة الأعضاء ═══════════ -->
+  <div class="card">
+    <div class="sec">
+      <span>👥 الأعضاء</span>
+      <span id="usersCount" style="color:var(--mu);font-weight:600;font-size:12px"></span>
+    </div>
+
+    <div id="usersListBox"></div>
+
+    <button class="big ok" id="showAddFormBtn" style="margin-top:12px">
+      ➕ إضافة عضو جديد
+    </button>
+
+    <div class="addBox hidden" id="addForm">
+      <h4>➕ عضو جديد</h4>
+      <div class="row">
+        <input type="text" id="newName" placeholder="اسم العضو" autocomplete="off">
+      </div>
+      <div class="row">
+        <input type="text" id="newPass" placeholder="كلمة المرور" autocomplete="off">
+      </div>
+      <div class="row">
+        <input type="text" id="newPass2" placeholder="تأكيد كلمة المرور" autocomplete="off">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <button class="big ok" id="confirmAddBtn">إضافة</button>
+        <button class="big danger" id="cancelAddBtn">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ النطاقات ═══════════ -->
+  <div class="card">
+    <div class="sec">
+      <span>🎯 نطاقات الأعضاء</span>
+    </div>
+    <p style="font-size:12.5px;color:var(--mu);text-align:center;margin:0 0 12px">
+      حدّد لكل عضو نطاقه (أو أكثر) بالضبط
+    </p>
+
+    <label>اختر العضو</label>
+    <select id="scopeMemberSel" style="margin-bottom:12px">
+      <option value="">اختر عضو...</option>
+    </select>
+
+    <div id="scopesListBox"></div>
+
+    <div class="addBox">
+      <h4>➕ إضافة نطاق جديد</h4>
+
+      <div style="font-size:12px;font-weight:700;color:var(--pr);margin-bottom:6px">
+        📍 من (البداية)
+      </div>
+      <div class="row4">
+        <div>
+          <label style="font-size:11px">قطاع</label>
+          <input type="number" id="fromSec" min="1" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px">بلوك</label>
+          <input type="number" id="fromBlk" min="1" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px">عمارة</label>
+          <input type="number" id="fromBld" min="1" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px">شقة</label>
+          <input type="number" id="fromApt" min="1" placeholder="0">
+        </div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--pr);margin:10px 0 6px">
+        🏁 إلى (النهاية)
+      </div>
+      <div class="row4">
+        <div>
+          <label style="font-size:11px">قطاع</label>
+          <input type="number" id="toSec" min="1" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px">بلوك</label>
+          <input type="number" id="toBlk" min="1" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px">عمارة</label>
+          <input type="number" id="toBld" min="1" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px">شقة</label>
+          <input type="number" id="toApt" min="1" placeholder="0">
+        </div>
+      </div>
+
+      <button class="big ok" id="addScopeBtn" style="margin-top:14px">
+        ✅ إضافة النطاق
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ الأزرار الديناميكية ═══════════ -->
+  <div class="card">
+    <div class="sec"><span>🔘 الأزرار الديناميكية</span></div>
+    <p style="font-size:12.5px;color:var(--mu);text-align:center;margin:0 0 12px">
+      أضف أزراراً تظهر للأعضاء — كل زر يفتح ملف HTML في نافذة داخلية
+    </p>
+
+    <div id="dynBtnsListBox"></div>
+
+    <button class="big ok" id="showDynBtnForm" style="margin-top:12px">
+      ➕ إضافة زر جديد
+    </button>
+
+    <div class="addBox hidden" id="dynBtnForm">
+      <h4>➕ زر جديد</h4>
+      <div class="row">
+        <label style="font-size:11px;text-align:right;margin-bottom:2px">
+          1) اسم الزر (يظهر للمستخدم)
+        </label>
+        <input type="text" id="dynBtnName"
+               placeholder="مثال: 🧮 حساب الفاتورة" autocomplete="off">
+      </div>
+      <div class="row">
+        <label style="font-size:11px;text-align:right;margin-bottom:2px">
+          2) اسم الملف (file.html)
+        </label>
+        <input type="text" id="dynBtnFile"
+               placeholder="مثال: calculator.html" autocomplete="off">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <button class="big ok" id="confirmDynBtn">إضافة</button>
+        <button class="big danger" id="cancelDynBtn">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ رفع الملفات ═══════════ -->
+  <div class="card">
+    <div class="sec"><span>📁 رفع الملفات</span></div>
+    <p style="font-size:12.5px;color:var(--mu);text-align:center;margin:0 0 12px">
+      Excel + PDF — يمكن رفع عدة ملفات معاً
+    </p>
+
+    <input type="file" id="fileInput"
+           accept=".pdf,.xlsx,.xls,.csv" multiple
+           style="padding:12px;height:auto;text-align:center">
+
+    <button class="big" id="processFilesBtn" style="margin-top:12px">
+      📥 معالجة الملفات
+    </button>
+
+    <div class="progress hidden" id="progBox">
+      <div class="bar" id="progBar"></div>
+    </div>
+
+    <div id="filesStatus" class="fileInfo hidden"></div>
+  </div>
+
+  <!-- ═══════════ النتائج ═══════════ -->
+  <div id="resultsBox" class="hidden">
+
+    <div class="card">
+      <div class="sec"><span>📊 ملخص البيانات</span></div>
+      <div class="stat" id="statsBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>👁️ معاينة (أول 20 صف)</span></div>
+      <div style="overflow-x:auto">
+        <table id="previewTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>قطاع</th>
+              <th>بلوك</th>
+              <th>عمارة</th>
+              <th>شقة</th>
+              <th>الاسم</th>
+              <th>العدد</th>
+              <th>القيمة</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>💾 التصدير</span></div>
+
+      <button class="big ok" id="exportAllBtn" style="margin-bottom:10px">
+        📦 تنزيل data.json (كامل)
+      </button>
+
+      <button class="big gold" id="exportEncBtn">
+        🔐 تنزيل ملفات الأعضاء المشفّرة
+      </button>
+
+      <div id="exportStatus" class="fileInfo hidden"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec"><span>📋 سجل العمليات</span></div>
+      <div class="log" id="logBox"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════ فك تشفير الأرشيف ═══════════ -->
+  <div class="card">
+    <div class="sec"><span>🔓 فك تشفير ملف أرشيف</span></div>
+    <p style="font-size:12.5px;color:var(--mu);text-align:center;margin:0 0 12px">
+      ارفع ملف الأرشيف المشفَّر الذي أرسله لك العضو
+    </p>
+
+    <input type="file" id="archiveFile"
+           accept=".json,application/json"
+           style="padding:12px;height:auto;text-align:center">
+
+    <button class="big gold" id="decArchiveBtn" style="margin-top:12px">
+      🔓 فك التشفير
+    </button>
+
+    <div id="archiveStatus" class="fileInfo hidden"></div>
+    <div id="archiveResult" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ═══════════ تصفير ═══════════ -->
+  <div class="card">
+    <div class="sec"><span>⚙️ إعدادات متقدمة</span></div>
+    <button class="big danger" id="resetAllBtn" style="font-size:13px">
+      🗑️ تصفير كامل (مسح كل شيء)
+    </button>
+  </div>
+
+  <div class="devFooter">
+    <div class="dev-label">Developed by</div>
+    <div class="dev-name">Sherif Mohamed Nashaat Mohamed</div>
+  </div>
+
+</div>
+
+<!-- =========================================================
+     نافذة تعديل عضو
+     ========================================================= -->
+<div id="editModal" class="modal hidden">
+  <div class="modalBox">
+    <h3>✏️ تعديل كلمة المرور</h3>
+    <div class="field">
+      <label>اسم العضو</label>
+      <input type="text" id="editName" readonly>
+    </div>
+    <div class="field">
+      <label>كلمة المرور الجديدة</label>
+      <input type="text" id="editPass" autocomplete="off">
+    </div>
+    <div class="buttons">
+      <button class="btnCancel" id="editCancelBtn">إلغاء</button>
+      <button class="btnConfirm" id="editConfirmBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     نافذة iframe للصفحات الديناميكية
+     ========================================================= -->
+<div id="dynIframeView" class="hidden">
+  <div class="topBar">
+    <span class="title" id="dynIframeTitle">📄 صفحة</span>
+    <button class="closeBtn" id="dynIframeClose">✕ إغلاق</button>
+  </div>
+  <iframe id="dynIframe" src="" loading="lazy"></iframe>
+</div>
+
+<!-- =========================================================
+     بداية JavaScript
+     ========================================================= -->
+<script>
+
+
+
+/* =========================================================
+   الجزء 3: JavaScript الأساسي
+   ========================================================= */
+
+/* ═══════════ الثوابت ═══════════ */
+const APP_SALT = "CollectAppSalt2026Secured_v1";
+const ADMIN_DEFAULT_PASSWORD = "1711@Myapp";
+const ADMIN_RESET_PASSWORD = "1711";
+
+const DEFAULT_USERS = [
+  { name:"مايكل",       password:"michael@2026", role:"member" },
+  { name:"هيثم",        password:"haitham@2026", role:"member" },
+  { name:"موسى",        password:"mousa@2026",   role:"member" },
+  { name:"أيمن",        password:"ayman@2026",   role:"member" },
+  { name:"عبد الحفيظ",  password:"hafiz@2026",   role:"member" },
+  { name:"محمد",        password:"mohamed@2026", role:"member" }
+];
+
+/* ═══════════ الأدوات ═══════════ */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelector(sel);
+
+const f = n => Number(n).toLocaleString('en-US');
+const p2 = n => String(n).padStart(2,'0');
+const esc = s => String(s).replace(/[&<>"]/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
+}[c]));
+
+const uniq = a => [...new Set(a)].sort((x,y)=>x-y);
+const sum  = (a,i) => a.reduce((x,d)=>x+d[i],0);
+const sumP = a => a.reduce((x,p)=>x+p.v,0);
+const key  = (s,b,m,a) => [s,b,m,a].join('-');
+
+const monthKey = (d=new Date()) => d.getFullYear()+'-'+p2(d.getMonth()+1);
+const monthLabel = k => {
+  const [y,m] = k.split('-');
+  try{
+    return new Date(+y,+m-1,1).toLocaleDateString('ar-EG-u-nu-latn',
+      {month:'long',year:'numeric'});
+  }catch(e){return k;}
+};
+
+/* ═══════════ localStorage ═══════════ */
+const ls = (k,d) => {
+  try{
+    const v = JSON.parse(localStorage.getItem(k));
+    return v == null ? d : v;
+  }catch(e){ return d; }
+};
+const lsSet = (k,v) => {
+  try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){}
+};
+const lsRemove = k => {
+  try{ localStorage.removeItem(k); }catch(e){}
+};
+
+/* ═══════════ IndexedDB ═══════════ */
+let _db = null;
+const openDb = () => new Promise((res,rej)=>{
+  const r = indexedDB.open('collect_db',1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+const kvGet = async k => {
+  _db = _db || await openDb();
+  return new Promise((res,rej)=>{
+    const q = _db.transaction('kv').objectStore('kv').get(k);
+    q.onsuccess = () => res(q.result);
+    q.onerror = () => rej(q.error);
+  });
+};
+const kvSet = async (k,v) => {
+  _db = _db || await openDb();
+  return new Promise((res,rej)=>{
+    const t = _db.transaction('kv','readwrite');
+    t.objectStore('kv').put(v,k);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+};
+
+/* ═══════════ التشفير ═══════════ */
+function deriveKey(password, salt){
+  return CryptoJS.PBKDF2(password, salt, {
+    keySize: 256/32,
+    iterations: 10000
+  }).toString();
+}
+
+function encryptData(obj, password){
+  const key = deriveKey(password, APP_SALT);
+  const json = JSON.stringify(obj);
+  const enc = CryptoJS.AES.encrypt(json, key).toString();
+  return {
+    v: 1,
+    salt: APP_SALT,
+    data: enc,
+    meta: {
+      count: obj.data ? obj.data.length : 0,
+      owner: obj.owner || "",
+      type: obj.type || "data",
+      ts: Date.now()
+    }
+  };
+}
+
+function decryptData(encObj, password){
+  try{
+    const key = deriveKey(password, encObj.salt || APP_SALT);
+    const dec = CryptoJS.AES.decrypt(encObj.data, key)
+                 .toString(CryptoJS.enc.Utf8);
+    if(!dec) return null;
+    return JSON.parse(dec);
+  }catch(e){ return null; }
+}
+
+/* ═══════════ الأدوات المساعدة ═══════════ */
+const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+const toEnDigits = s => String(s).replace(/[٠-٩]/g, d => AR_DIGITS.indexOf(d));
+const toNum = v => {
+  if(v == null || v === '') return 0;
+  const str = toEnDigits(v).replace(/[^\d.-]/g,'');
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+};
+
+const parseIssueMonth = raw => {
+  if(raw == null) return '';
+  let s = toEnDigits(String(raw)).trim();
+  if(!s) return '';
+
+  const digitsOnly = s.replace(/\D/g,'');
+  if(digitsOnly.length === 6){
+    const y = digitsOnly.slice(0,4);
+    const m = digitsOnly.slice(4,6);
+    const mi = parseInt(m,10);
+    if(mi >= 1 && mi <= 12) return `${y}-${p2(mi)}`;
+  }
+
+  let m1 = s.match(/^(\d{4})[-\/.](\d{1,2})/);
+  if(m1){
+    const mi = parseInt(m1[2],10);
+    if(mi >= 1 && mi <= 12) return `${m1[1]}-${p2(mi)}`;
+  }
+  return '';
+};
+
+/* ═══════════ كشف أعمدة Excel ═══════════ */
+function detectColumns(headerRow){
+  if(!headerRow || !headerRow.length) return null;
+  const norm = s => String(s||'')
+    .replace(/[\u200c-\u200f\u202a-\u202e\u2066-\u2069]/g,'')
+    .trim();
+  const H = headerRow.map(norm);
+
+  const find = (...patterns) => {
+    for(let i=0;i<H.length;i++){
+      if(!H[i]) continue;
+      for(const p of patterns){
+        if(H[i].includes(p)) return i;
+      }
+    }
+    return -1;
+  };
+
+  const cols = {
+    sec:   find('قطاع'),
+    issue: find('شهر الاصدار','شهر الإصدار','تاريخ الاصدار','تاريخ الإصدار','اصدار','إصدار'),
+    val:   find('القيمة','قيمة','المبلغ','مبلغ'),
+    cnt:   find('العدد','عدد','الفواتير','فواتير'),
+    name:  find('اسم العميل','الاسم','اسم'),
+    blk:   find('بلوك'),
+    bld:   find('عمارة','عقار','مبنى','بناء'),
+    apt:   find('شقة','وحدة')
+  };
+
+  const known = Object.values(cols).filter(v => v >= 0).length;
+  if(known < 4) return null;
+  return cols;
+}
+
+/* ═══════════ قراءة Excel ═══════════ */
+async function readExcel(file){
+  const data = new Uint8Array(await file.arrayBuffer());
+  const wb = XLSX.read(data, {type:'array'});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+  let cols = null, startIdx = 0;
+  if(rows[0]){
+    cols = detectColumns(rows[0]);
+    if(cols) startIdx = 1;
+  }
+  if(!cols){
+    cols = {sec:0, issue:1, val:2, cnt:3, name:4, blk:5, bld:6, apt:7};
+  }
+
+  const out = [];
+  let issueMonth = '';
+  const getCell = (r,i) => i>=0 && i<r.length ? r[i] : '';
+
+  for(let i=startIdx;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || !r.length) continue;
+    if(r.every(c => c==null || c==='')) continue;
+
+    const sec      = toNum(getCell(r, cols.sec));
+    const issueRaw = getCell(r, cols.issue);
+    const val      = toNum(getCell(r, cols.val));
+    const cnt      = toNum(getCell(r, cols.cnt));
+    const nm       = String(getCell(r, cols.name) ?? '').trim();
+    const blk      = toNum(getCell(r, cols.blk));
+    const bld      = toNum(getCell(r, cols.bld));
+    const apt      = toNum(getCell(r, cols.apt));
+
+    if(!issueMonth && issueRaw !== '' && issueRaw != null){
+      issueMonth = parseIssueMonth(issueRaw);
+    }
+
+    if(!sec || !blk || !bld || !apt || !nm || !val) continue;
+    out.push([sec, blk, bld, apt, nm, cnt, val]);
+  }
+
+  return { rows: out, issueMonth };
+}
+
+/* ═══════════ قراءة PDF ═══════════ */
+const isN = s => /^[٠-٩0-9]+$/.test(s);
+const PF  = /[\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const fixArabic = s => {
+  if(!PF.test(s)) return s;
+  const n = s.normalize('NFKC');
+  return n.split(/\s+/).filter(Boolean).reverse().join(' ');
+};
+
+const LAYOUTS = {
+  A: {
+    val:[100,170], cnt:[170,200],
+    sec:[350,370], blk:[370,392],
+    bld:[393,415], apt:[415,435], nm:[455,590]
+  },
+  B: {
+    val:[40,90], cnt:[90,108],
+    sec:[380,398], blk:[398,416],
+    bld:[417,435], apt:[435,453], nm:[468,590]
+  }
+};
+
+async function readPdf(file){
+  const pdf = await pdfjsLib.getDocument({
+    data: new Uint8Array(await file.arrayBuffer())
+  }).promise;
+
+  const out = [];
+  for(let n=1;n<=pdf.numPages;n++){
+    const pg = await pdf.getPage(n);
+    const H  = pg.view[3] - pg.view[1];
+    const tc = await pg.getTextContent();
+    const it = [];
+
+    tc.items.forEach(i => {
+      const s = (i.str||'').trim();
+      if(s) it.push({ s, x:i.transform[4], y:H-i.transform[5] });
+    });
+
+    const lay = it.some(i => fixArabic(i.s)==='العداد')
+      ? LAYOUTS.B : LAYOUTS.A;
+
+    const anc = it
+      .filter(i => i.x > 585 && (isN(i.s) || i.s === '***'))
+      .sort((a,b) => a.y-b.y);
+
+    for(const a of anc){
+      const r = it.filter(i => Math.abs(i.y - a.y) < 4);
+      const c = {};
+      for(const k in lay){
+        c[k] = r.filter(i =>
+          i.x >= lay[k][0] && i.x < lay[k][1]
+        ).sort((p,q) => p.x - q.x);
+      }
+      if(!Object.values(c).every(v => v.length)) continue;
+      if(!['val','cnt','sec','blk','bld','apt']
+          .every(k => isN(c[k][0].s))) continue;
+
+      const nm = c.nm
+        .sort((p,q) => q.x - p.x)
+        .map(i => fixArabic(i.s))
+        .join(' ')
+        .replace(/\s+/g,' ')
+        .trim();
+
+      out.push([
+        toNum(c.sec[0].s), toNum(c.blk[0].s),
+        toNum(c.bld[0].s), toNum(c.apt[0].s),
+        nm,
+        toNum(c.cnt[0].s), toNum(c.val[0].s)
+      ]);
+    }
+  }
+  return { rows: out, issueMonth: '' };
+}
+
+/* ═══════════ قراءة أي ملف ═══════════ */
+async function readFile(file){
+  const lower = file.name.toLowerCase();
+  if(lower.endsWith('.pdf')){
+    return await readPdf(file);
+  } else if(lower.endsWith('.csv') ||
+            lower.endsWith('.xlsx') ||
+            lower.endsWith('.xls')){
+    return await readExcel(file);
+  }
+  throw new Error('نوع الملف غير مدعوم: ' + file.name);
+}
+
+/* ═══════════ إدارة المستخدمين ═══════════ */
+let USERS = ls('collect_users', null);
+if(!USERS || !Array.isArray(USERS) || !USERS.length){
+  USERS = DEFAULT_USERS.slice();
+  lsSet('collect_users', USERS);
+}
+let ADMIN_PW = ls('collect_admin_pw', ADMIN_DEFAULT_PASSWORD);
+if(!ADMIN_PW) ADMIN_PW = ADMIN_DEFAULT_PASSWORD;
+
+const saveUsers = () => lsSet('collect_users', USERS);
+const saveAdminPw = () => lsSet('collect_admin_pw', ADMIN_PW);
+const sortUsers = () => {
+  USERS.sort((a,b) => a.name.localeCompare(b.name,'ar'));
+  saveUsers();
+};
+
+/* ═══════════ إدارة النطاقات ═══════════ */
+const SCOPES_KEY = 'collect_scopes';
+
+function loadScopes(){ return ls(SCOPES_KEY, {}); }
+function saveScopes(scopes){ lsSet(SCOPES_KEY, scopes); }
+function getMemberScopes(memberName){
+  const all = loadScopes();
+  return all[memberName] || [];
+}
+function setMemberScopes(memberName, scopes){
+  const all = loadScopes();
+  all[memberName] = scopes;
+  saveScopes(all);
+}
+
+/* ═══════════ إدارة الأزرار الديناميكية ═══════════ */
+const DYN_BTNS_KEY = 'collect_dyn_buttons';
+function loadDynButtons(){ return ls(DYN_BTNS_KEY, []); }
+function saveDynButtons(btns){ lsSet(DYN_BTNS_KEY, btns); }
+
+/* ═══════════ تنزيل JSON ═══════════ */
+function downloadJson(obj, filename){
+  const blob = new Blob(
+    [JSON.stringify(obj, null, 2)],
+    {type:'application/json'}
+  );
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 500);
+}
+
+/* ═══════════ السجل ═══════════ */
+function log(msg){
+  const el = $('logBox');
+  if(!el) return;
+  const t = new Date().toLocaleTimeString('en-GB');
+  el.textContent += `[${t}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+/* ═══════════ الدخول ═══════════ */
+function checkAdminAuth(){
+  const s = sessionStorage.getItem('collect_session');
+  if(!s) return false;
+  try{
+    const sess = JSON.parse(s);
+    return sess.role === 'admin';
+  }catch(e){ return false; }
+}
+
+function doAdminLogin(){
+  const pw = $('adminPw').value;
+  const err = $('adminLoginErr');
+  err.classList.add('hidden');
+
+  if(pw === ADMIN_RESET_PASSWORD){
+    ADMIN_PW = ADMIN_DEFAULT_PASSWORD;
+    saveAdminPw();
+    err.textContent = 'تم إعادة تعيين كلمة المرور للأدمن';
+    err.classList.remove('hidden');
+    $('adminPw').value = '';
+    return;
+  }
+
+  if(pw !== ADMIN_PW){
+    err.textContent = 'كلمة المرور غير صحيحة';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  sessionStorage.setItem('collect_session', JSON.stringify({
+    name: 'الأدمن',
+    role: 'admin'
+  }));
+
+  showAdminPanel();
+}
+
+function showAdminPanel(){
+  $('adminLoginView').classList.add('hidden');
+  $('adminView').classList.remove('hidden');
+  window.scrollTo(0,0);
+
+  renderAdminUsers();
+  renderScopeMembersList();
+  renderScopesList();
+  renderDynButtons();
+  renderDynButtonsBar();
+}
+
+function doAdminLogout(){
+  if(!confirm('تسجيل الخروج؟')) return;
+  sessionStorage.removeItem('collect_session');
+  location.href = '/index.html';
+}
+
+/* ═══════════ إدارة الأعضاء ═══════════ */
+function renderAdminUsers(){
+  sortUsers();
+  const box = $('usersListBox');
+  if(!box) return;
+  if(!USERS.length){
+    box.innerHTML = '<div class="empty">لا يوجد أعضاء بعد</div>';
+  } else {
+    box.innerHTML = USERS.map(u => `
+      <div class="userRow">
+        <div>
+          <div class="name">${esc(u.name)}</div>
+          <div class="pass">${esc(u.password)}</div>
+        </div>
+        <button class="iconBtn edit" data-edit="${esc(u.name)}" title="تعديل">✏️</button>
+        <button class="iconBtn del" data-del="${esc(u.name)}" title="حذف">🗑️</button>
+      </div>
+    `).join('');
+  }
+  $('usersCount').textContent = USERS.length + ' عضو';
+}
+
+function handleUsersListClick(e){
+  const ed = e.target.closest('[data-edit]');
+  if(ed){
+    const name = ed.dataset.edit;
+    const u = USERS.find(x => x.name === name);
+    if(!u) return;
+    $('editName').value = u.name;
+    $('editPass').value = u.password;
+    $('editModal').classList.remove('hidden');
+    return;
+  }
+
+  const dl = e.target.closest('[data-del]');
+  if(dl){
+    const name = dl.dataset.del;
+    if(!confirm(`حذف العضو "${name}"؟\nملاحظة: سيتم حذف نطاقاته أيضاً.`)) return;
+
+    USERS = USERS.filter(x => x.name !== name);
+    saveUsers();
+
+    const all = loadScopes();
+    delete all[name];
+    saveScopes(all);
+
+    renderAdminUsers();
+    renderScopeMembersList();
+    renderScopesList();
+  }
+}
+
+function confirmEditPass(){
+  const name = $('editName').value;
+  const pass = $('editPass').value.trim();
+  if(!pass){
+    alert('كلمة المرور لا يمكن أن تكون فارغة');
+    return;
+  }
+  const u = USERS.find(x => x.name === name);
+  if(!u) return;
+  u.password = pass;
+  saveUsers();
+  $('editModal').classList.add('hidden');
+  renderAdminUsers();
+  alert('✅ تم تحديث كلمة المرور');
+}
+
+function showAddForm(){
+  $('addForm').classList.toggle('hidden');
+  $('newName').focus();
+}
+
+function cancelAddForm(){
+  $('addForm').classList.add('hidden');
+  $('newName').value = '';
+  $('newPass').value = '';
+  $('newPass2').value = '';
+}
+
+function confirmAddMember(){
+  const name = $('newName').value.trim();
+  const pass = $('newPass').value.trim();
+  const pass2 = $('newPass2').value.trim();
+
+  if(!name){ alert('أدخل اسم العضو'); return; }
+  if(!pass){ alert('أدخل كلمة المرور'); return; }
+  if(pass !== pass2){ alert('كلمتا المرور غير متطابقتين'); return; }
+  if(USERS.some(u => u.name === name)){
+    alert('اسم العضو موجود مسبقاً');
+    return;
+  }
+
+  USERS.push({ name, password: pass, role: 'member' });
+  saveUsers();
+
+  $('newName').value = '';
+  $('newPass').value = '';
+  $('newPass2').value = '';
+  $('addForm').classList.add('hidden');
+
+  renderAdminUsers();
+  renderScopeMembersList();
+  alert('✅ تم إضافة العضو: ' + name);
+}
+
+/* ═══════════ قائمة النطاقات ═══════════ */
+function renderScopeMembersList(){
+  sortUsers();
+  const sel = $('scopeMemberSel');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">اختر عضو...</option>' +
+    USERS.map(u => `<option value="${esc(u.name)}">${esc(u.name)}</option>`).join('');
+}
+
+function onScopeMemberChange(){
+  renderScopesList();
+}
+
+function renderScopesList(){
+  const member = $('scopeMemberSel')?.value;
+  const box = $('scopesListBox');
+  if(!box) return;
+
+  if(!member){
+    box.innerHTML = '<div class="empty">اختر عضواً لعرض نطاقاته</div>';
+    return;
+  }
+
+  const scopes = getMemberScopes(member);
+  if(!scopes.length){
+    box.innerHTML = '<div class="empty">لا توجد نطاقات لهذا العضو</div>';
+    return;
+  }
+
+  box.innerHTML = scopes.map((sc,i) => `
+    <div class="scopeItem">
+      <div class="scopeInfo">
+        <div class="fromTo">
+          <span class="tag">من: قطاع ${p2(sc.from.s)} - بلوك ${p2(sc.from.b)} - عمارة ${p2(sc.from.m)} - شقة ${p2(sc.from.a)}</span>
+        </div>
+        <div class="fromTo">
+          <span class="tag">إلى: قطاع ${p2(sc.to.s)} - بلوك ${p2(sc.to.b)} - عمارة ${p2(sc.to.m)} - شقة ${p2(sc.to.a)}</span>
+        </div>
+      </div>
+      <button class="iconBtn del" data-del-scope="${i}" title="حذف">🗑️</button>
+    </div>
+  `).join('');
+
+  box.querySelectorAll('[data-del-scope]').forEach(btn => {
+    btn.onclick = () => {
+      const i = +btn.dataset.delScope;
+      if(!confirm('حذف هذا النطاق؟')) return;
+      const arr = getMemberScopes(member);
+      arr.splice(i,1);
+      setMemberScopes(member, arr);
+      renderScopesList();
+    };
+  });
+}
+
+function addScope(){
+  const member = $('scopeMemberSel')?.value;
+  if(!member){ alert('اختر العضو أولاً'); return; }
+
+  const fromSec = +$('fromSec').value;
+  const fromBlk = +$('fromBlk').value;
+  const fromBld = +$('fromBld').value;
+  const fromApt = +$('fromApt').value;
+  const toSec   = +$('toSec').value;
+  const toBlk   = +$('toBlk').value;
+  const toBld   = +$('toBld').value;
+  const toApt   = +$('toApt').value;
+
+  if(!fromSec || !fromBlk || !fromBld || !fromApt){
+    alert('أدخل بيانات "من" كاملة');
+    return;
+  }
+  if(!toSec || !toBlk || !toBld || !toApt){
+    alert('أدخل بيانات "إلى" كاملة');
+    return;
+  }
+
+  const arr = getMemberScopes(member);
+  arr.push({
+    from: { s:fromSec, b:fromBlk, m:fromBld, a:fromApt },
+    to:   { s:toSec,   b:toBlk,   m:toBld,   a:toApt }
+  });
+  setMemberScopes(member, arr);
+
+  ['fromSec','fromBlk','fromBld','fromApt',
+   'toSec','toBlk','toBld','toApt'].forEach(id => {
+    const el = $(id);
+    if(el) el.value = '';
+  });
+
+  renderScopesList();
+  alert('✅ تم إضافة النطاق');
+}
+
+/* ═══════════ الأزرار الديناميكية ═══════════ */
+function renderDynButtons(){
+  const box = $('dynBtnsListBox');
+  if(!box) return;
+
+  const btns = loadDynButtons();
+  if(!btns.length){
+    box.innerHTML = '<div class="empty">لا توجد أزرار بعد</div>';
+    return;
+  }
+
+  box.innerHTML = btns.map((b,i) => `
+    <div class="dynBtnItem">
+      <div class="info">
+        <div class="name">${esc(b.name)}</div>
+        <div class="file">${esc(b.file)}</div>
+      </div>
+      <button class="iconBtn del" data-del-dyn="${i}" title="حذف">🗑️</button>
+    </div>
+  `).join('');
+
+  box.querySelectorAll('[data-del-dyn]').forEach(btn => {
+    btn.onclick = () => {
+      const i = +btn.dataset.delDyn;
+      if(!confirm('حذف هذا الزر؟')) return;
+      const arr = loadDynButtons();
+      arr.splice(i,1);
+      saveDynButtons(arr);
+      renderDynButtons();
+      renderDynButtonsBar();
+    };
+  });
+}
+
+function showDynBtnForm(){
+  $('dynBtnForm').classList.toggle('hidden');
+  $('dynBtnName').focus();
+}
+
+function cancelDynBtnForm(){
+  $('dynBtnForm').classList.add('hidden');
+  $('dynBtnName').value = '';
+  $('dynBtnFile').value = '';
+}
+
+function confirmAddDynBtn(){
+  let name = $('dynBtnName').value.trim();
+  let file = $('dynBtnFile').value.trim();
+
+  if(!name){ alert('أدخل اسم الزر'); return; }
+  if(!file){ alert('أدخل اسم الملف'); return; }
+  if(!file.endsWith('.html')) file = file + '.html';
+
+  const arr = loadDynButtons();
+  arr.push({ name, file });
+  saveDynButtons(arr);
+
+  $('dynBtnName').value = '';
+  $('dynBtnFile').value = '';
+  $('dynBtnForm').classList.add('hidden');
+
+  renderDynButtons();
+  renderDynButtonsBar();
+  alert('✅ تم إضافة الزر');
+}
+
+function renderDynButtonsBar(){
+  const bar = $('dynamicBtnsBar');
+  if(!bar) return;
+
+  const btns = loadDynButtons();
+  if(!btns.length){
+    bar.innerHTML = '';
+    bar.classList.add('hidden');
+    return;
+  }
+
+  bar.classList.remove('hidden');
+  bar.innerHTML = btns.map((b,i) => `
+    <button class="dynBtn" data-dyn="${i}">${esc(b.name)}</button>
+  `).join('');
+
+  bar.onclick = e => {
+    const b = e.target.closest('.dynBtn');
+    if(!b) return;
+    const i = +b.dataset.dyn;
+    const btn = btns[i];
+    if(btn) openIframePage(btn.file, btn.name);
+  };
+}
+
+function openIframePage(file, title){
+  const view = $('dynIframeView');
+  const frame = $('dynIframe');
+  const ttl = $('dynIframeTitle');
+  if(!view || !frame) return;
+  ttl.textContent = title || 'صفحة';
+  frame.src = '/' + file + '?t=' + Date.now();
+  view.classList.remove('hidden');
+}
+
+function closeIframePage(){
+  $('dynIframeView').classList.add('hidden');
+  const f = $('dynIframe');
+  if(f) f.src = '';
+}
+
+console.log('✅ admin.js (الجزء 3) تم تحميله بنجاح');
+
+
+
+
+/* =========================================================
+   الجزء 4: رفع الملفات + التصدير + فك التشفير + الإقلاع
+   ========================================================= */
+
+let currentData = null;
+let currentIssueMonth = '';
+let currentSource = '';
+
+/* ═══════════ معالجة الملفات ═══════════ */
+async function processFiles(){
+  const files = [...$('fileInput').files];
+  if(!files.length){
+    alert('اختر ملفاً واحداً على الأقل');
+    return;
+  }
+
+  const prog = $('progBox');
+  const bar = $('progBar');
+  const st = $('filesStatus');
+  prog.classList.remove('hidden');
+  st.classList.remove('hidden');
+  st.textContent = '⏳ جاري المعالجة...';
+  $('logBox').textContent = '';
+
+  let allRows = [];
+  let issueMonth = '';
+  const names = [];
+
+  for(let i=0;i<files.length;i++){
+    const file = files[i];
+    try{
+      log(`📄 قراءة: ${file.name}`);
+      const res = await readFile(file);
+      log(`   → ${res.rows.length} صف`);
+      allRows = allRows.concat(res.rows);
+      if(!issueMonth && res.issueMonth) issueMonth = res.issueMonth;
+      names.push(file.name);
+    }catch(err){
+      log(`❌ خطأ في ${file.name}: ${err.message}`);
+    }
+    bar.style.width = Math.round(((i+1)/files.length) * 100) + '%';
+  }
+
+  if(!allRows.length){
+    st.textContent = '❌ لا توجد بيانات صالحة';
+    prog.classList.add('hidden');
+    return;
+  }
+
+  const map = new Map();
+  allRows.forEach(d => map.set(key(d[0],d[1],d[2],d[3]), d));
+  const rows = [...map.values()];
+
+  currentData = rows;
+  currentIssueMonth = issueMonth;
+  currentSource = names.join(', ');
+
+  st.textContent = `✅ تم قراءة ${rows.length} عميل من ${files.length} ملف`;
+  prog.classList.add('hidden');
+
+  showResults();
+}
+
+function showResults(){
+  $('resultsBox').classList.remove('hidden');
+
+  const totalVal = currentData.reduce((a,d) => a+d[6], 0);
+  const totalCnt = currentData.reduce((a,d) => a+d[5], 0);
+  const uniqNames = new Set(currentData.map(d => d[4])).size;
+  const uniqSecs = new Set(currentData.map(d => d[0])).size;
+  const uniqBlks = new Set(currentData.map(d => d[0]+'-'+d[1])).size;
+
+  $('statsBox').innerHTML = `
+    <div><div class="t">عدد الصفوف</div><div class="n">${currentData.length}</div></div>
+    <div><div class="t">عدد الفواتير</div><div class="n">${f(totalCnt)}</div></div>
+    <div><div class="t">إجمالي القيمة</div><div class="n">${f(totalVal)}</div></div>
+    <div><div class="t">عدد العملاء</div><div class="n">${f(uniqNames)}</div></div>
+    <div><div class="t">عدد القطاعات</div><div class="n">${uniqSecs}</div></div>
+    <div><div class="t">عدد البلوكات</div><div class="n">${uniqBlks}</div></div>
+    <div><div class="t">شهر الإصدار</div><div class="n">${currentIssueMonth || '—'}</div></div>
+  `;
+
+  const tb = $('previewTable').querySelector('tbody');
+  tb.innerHTML = currentData.slice(0,20).map((d,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${p2(d[0])}</td>
+      <td>${p2(d[1])}</td>
+      <td>${p2(d[2])}</td>
+      <td>${p2(d[3])}</td>
+      <td>${esc(d[4])}</td>
+      <td>${d[5]}</td>
+      <td>${d[6]}</td>
+    </tr>
+  `).join('');
+
+  if(currentData.length > 20){
+    tb.innerHTML += `
+      <tr><td colspan="8" style="text-align:center;color:var(--mu);padding:10px">
+        ... و ${currentData.length - 20} صف إضافي
+      </td></tr>
+    `;
+  }
+}
+
+/* ═══════════ التصدير: data.json ═══════════ */
+function exportAll(){
+  if(!currentData){ alert('لا توجد بيانات للتصدير'); return; }
+
+  const output = {
+    generated: new Date().toISOString(),
+    issueMonth: currentIssueMonth,
+    source: currentSource,
+    count: currentData.length,
+    totalValue: currentData.reduce((a,d) => a+d[6], 0),
+    totalCount: currentData.reduce((a,d) => a+d[5], 0),
+    data: currentData
+  };
+
+  downloadJson(output, 'data.json');
+
+  const st = $('exportStatus');
+  st.classList.remove('hidden');
+  st.textContent = '✅ تم تنزيل data.json — ارفعه إلى GitHub';
+  log('⬇️ تنزيل data.json');
+}
+
+/* ═══════════ التصدير: ملفات الأعضاء المشفّرة ═══════════ */
+async function exportEncryptedForMembers(){
+  if(!currentData){ alert('لا توجد بيانات للتصدير'); return; }
+
+  const st = $('exportStatus');
+  st.classList.remove('hidden');
+  st.textContent = '⏳ جاري إنشاء الملفات...';
+
+  const users = USERS.slice();
+  if(!users.length){ alert('لا يوجد أعضاء'); return; }
+
+  let count = 0;
+  for(const u of users){
+    try{
+      const scopes = getMemberScopes(u.name);
+
+      const payload = {
+        owner: u.name,
+        role: 'member',
+        type: 'data',
+        month: currentIssueMonth || monthKey(),
+        generated: new Date().toISOString(),
+        count: currentData.length,
+        scope: scopes,
+        data: currentData
+      };
+
+      const encObj = encryptData(payload, u.password);
+
+      await new Promise(r => setTimeout(r, 300));
+      downloadJson(encObj, `data-${u.name}.enc.json`);
+      count++;
+      log(`✅ ${u.name}`);
+    }catch(err){
+      log(`❌ فشل ${u.name}: ${err.message}`);
+    }
+  }
+
+  st.textContent = `✅ تم إنشاء ${count} ملف مشفَّر`;
+
+  setTimeout(() => {
+    const index = {
+      generated: new Date().toISOString(),
+      month: currentIssueMonth || monthKey(),
+      count: currentData.length,
+      members: users.map(u => ({
+        name: u.name,
+        file: `data-${u.name}.enc.json`,
+        scopes: getMemberScopes(u.name).length
+      }))
+    };
+    downloadJson(index, 'members-index.json');
+  }, users.length * 400 + 500);
+}
+
+/* ═══════════ فك تشفير الأرشيف ═══════════ */
+async function decryptArchive(){
+  const file = $('archiveFile').files[0];
+  if(!file){ alert('اختر ملف الأرشيف'); return; }
+
+  const st = $('archiveStatus');
+  const res = $('archiveResult');
+  st.classList.remove('hidden');
+  st.textContent = '⏳ جاري فك التشفير...';
+  res.innerHTML = '';
+
+  try{
+    const text = await file.text();
+    const encObj = JSON.parse(text);
+
+    const dec = decryptData(encObj, ADMIN_PW);
+    if(!dec) throw new Error('فشل فك التشفير');
+
+    st.textContent = '✅ تم فك التشفير بنجاح';
+
+    let html = `<div class="archivePreview">
+      <div class="memberTag">📄 ملف: ${esc(dec.member || 'غير معروف')}</div>`;
+
+    if(dec.snapshot){
+      const snap = dec.snapshot;
+      const totalPaid = sumP(snap.paid || []);
+      const totalData = snap.data ? snap.data.length : 0;
+
+      html += `
+        <div class="row"><span>الشهر:</span><b>${esc(snap.monthKey || '—')}</b></div>
+        <div class="row"><span>تاريخ الأرشفة:</span><b>${new Date(dec.createdAt || Date.now()).toLocaleString('ar-EG')}</b></div>
+        <hr style="border:none;border-top:1px dashed var(--bd);margin:8px 0">
+        <div class="row"><span>عدد العملاء:</span><b>${f(totalData)}</b></div>
+        <div class="row"><span>عدد عمليات السداد:</span><b>${f((snap.paid||[]).length)}</b></div>
+        <div class="row"><span>إجمالي المسدَّد:</span><b>${f(totalPaid)} جنيه</b></div>
+      `;
+
+      if(snap.data && snap.data.length){
+        const secTot = {};
+        snap.data.forEach(d => {
+          if(!secTot[d[0]]) secTot[d[0]] = { tot:0, col:0 };
+          secTot[d[0]].tot += d[6];
+        });
+        (snap.paid || []).forEach(p => {
+          if(!secTot[p.s]) secTot[p.s] = { tot:0, col:0 };
+          secTot[p.s].col += p.v;
+        });
+
+        html += `<div style="margin-top:12px;font-weight:800;color:var(--pr);text-align:center">
+          📊 ملخص حسب القطاع
+        </div>
+        <table style="margin-top:8px">
+          <thead><tr>
+            <th>قطاع</th>
+            <th>إجمالي المديونية</th>
+            <th>المُحصَّل</th>
+            <th>المتبقي</th>
+            <th>النسبة</th>
+          </tr></thead>
+          <tbody>
+            ${Object.keys(secTot).sort((a,b) => a-b).map(s => {
+              const t = secTot[s].tot;
+              const c = secTot[s].col;
+              const rem = t - c;
+              const pct = t > 0 ? ((c/t)*100).toFixed(1) : '0.0';
+              return `<tr>
+                <td>قطاع ${p2(s)}</td>
+                <td style="direction:ltr">${f(t)}</td>
+                <td style="direction:ltr">${f(c)}</td>
+                <td style="direction:ltr">${f(rem)}</td>
+                <td style="direction:ltr">${pct}%</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+      }
+    }
+
+    html += `</div>`;
+    res.innerHTML = html;
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'big ok';
+    dlBtn.textContent = '⬇️ تنزيل البيانات المفكوكة (JSON)';
+    dlBtn.style.marginTop = '12px';
+    dlBtn.onclick = () => downloadJson(dec, `decrypted-${dec.member||'archive'}.json`);
+    res.appendChild(dlBtn);
+
+  }catch(err){
+    st.textContent = '❌ ' + err.message;
+    log(`❌ فشل فك التشفير: ${err.message}`);
+  }
+}
+
+/* ═══════════ تصفير كامل ═══════════ */
+function resetAll(){
+  if(!confirm('⚠️ سيتم حذف كل شيء: الأعضاء، النطاقات، الأزرار. متابعة؟')) return;
+  if(!confirm('تأكيد أخير: حذف نهائي؟')) return;
+
+  USERS = DEFAULT_USERS.slice();
+  saveUsers();
+  ADMIN_PW = ADMIN_DEFAULT_PASSWORD;
+  saveAdminPw();
+
+  lsRemove('collect_scopes');
+  lsRemove('collect_dyn_buttons');
+  lsRemove('collect_v1');
+  lsRemove('collect_arcidx');
+  lsRemove('collect_issues');
+  lsRemove('collect_month');
+  lsRemove('collect_note');
+
+  renderAdminUsers();
+  renderScopeMembersList();
+  renderScopesList();
+  renderDynButtons();
+  renderDynButtonsBar();
+
+  alert('✅ تم التصفير بنجاح');
+}
+
+/* ═══════════ ربط الأحداث ═══════════ */
+function bindAdminEvents(){
+  // إدارة الأعضاء
+  const usersBox = $('usersListBox');
+  if(usersBox) usersBox.onclick = handleUsersListClick;
+
+  const editCancel = $('editCancelBtn');
+  if(editCancel) editCancel.onclick = () => $('editModal').classList.add('hidden');
+
+  const editConfirm = $('editConfirmBtn');
+  if(editConfirm) editConfirm.onclick = confirmEditPass;
+
+  const showAddFormBtn = $('showAddFormBtn');
+  if(showAddFormBtn) showAddFormBtn.onclick = showAddForm;
+
+  const cancelAddBtn = $('cancelAddBtn');
+  if(cancelAddBtn) cancelAddBtn.onclick = cancelAddForm;
+
+  const confirmAddBtn = $('confirmAddBtn');
+  if(confirmAddBtn) confirmAddBtn.onclick = confirmAddMember;
+
+  // النطاقات
+  const scopeMemberSel = $('scopeMemberSel');
+  if(scopeMemberSel) scopeMemberSel.onchange = onScopeMemberChange;
+
+  const addScopeBtn = $('addScopeBtn');
+  if(addScopeBtn) addScopeBtn.onclick = addScope;
+
+  // الأزرار الديناميكية
+  const showDynBtnFormBtn = $('showDynBtnForm');
+  if(showDynBtnFormBtn) showDynBtnFormBtn.onclick = showDynBtnForm;
+
+  const cancelDynBtn = $('cancelDynBtn');
+  if(cancelDynBtn) cancelDynBtn.onclick = cancelDynBtnForm;
+
+  const confirmDynBtn = $('confirmDynBtn');
+  if(confirmDynBtn) confirmDynBtn.onclick = confirmAddDynBtn;
+
+  const dynIframeClose = $('dynIframeClose');
+  if(dynIframeClose) dynIframeClose.onclick = closeIframePage;
+
+  // رفع الملفات
+  const processFilesBtn = $('processFilesBtn');
+  if(processFilesBtn) processFilesBtn.onclick = processFiles;
+
+  // التصدير
+  const exportAllBtn = $('exportAllBtn');
+  if(exportAllBtn) exportAllBtn.onclick = exportAll;
+
+  const exportEncBtn = $('exportEncBtn');
+  if(exportEncBtn) exportEncBtn.onclick = exportEncryptedForMembers;
+
+  // فك التشفير
+  const decArchiveBtn = $('decArchiveBtn');
+  if(decArchiveBtn) decArchiveBtn.onclick = decryptArchive;
+
+  // تصفير
+  const resetAllBtn = $('resetAllBtn');
+  if(resetAllBtn) resetAllBtn.onclick = resetAll;
+}
+
+/* ═══════════ الإقلاع ═══════════ */
+function initAdminApp(){
+  // ربط الأحداث الأساسية
+  bindAdminEvents();
+
+  // التحقق من الجلسة
+  if(checkAdminAuth()){
+    showAdminPanel();
+    return;
+  }
+
+  // أحداث الدخول
+  const adminLoginBtn = $('adminLoginBtn');
+  if(adminLoginBtn) adminLoginBtn.onclick = doAdminLogin;
+
+  const adminPw = $('adminPw');
+  if(adminPw){
+    adminPw.addEventListener('keydown', e => {
+      if(e.key === 'Enter') doAdminLogin();
+    });
+  }
+
+  const adminLogoutBtn = $('adminLogoutBtn');
+  if(adminLogoutBtn) adminLogoutBtn.onclick = doAdminLogout;
+}
+
+document.addEventListener('DOMContentLoaded', initAdminApp);
+
+console.log('✅ admin.html تم تحميله بالكامل');
+</script>
+</body>
+</html>
+
+
+
+
+
+
